@@ -7,11 +7,10 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
+    if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
     try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         const { data_list } = req.body;
 
         if (!data_list || !Array.isArray(data_list)) {
