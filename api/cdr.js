@@ -6,13 +6,8 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
@@ -37,11 +32,22 @@ export default async function handler(req, res) {
             discby: call.discBy
         }));
 
+        // 1. Upsert call logs
         const { error } = await supabase
             .from('call_logs')
             .upsert(records, { onConflict: 'callid' });
 
         if (error) throw error;
+
+        // 2. Link callid back to recent click_calls entries missing a callid
+        for (const call of records) {
+            await supabase
+                .from('click_calls')
+                .update({ callid: call.callid })
+                .eq('phone', call.phone)
+                .eq('agentid', call.agentid)
+                .is('callid', null);
+        }
 
         return res.status(200).json({ 
             success: true, 
