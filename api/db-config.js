@@ -1,2 +1,3 @@
 export const SUPABASE_URL = "https://trzhfqurcdhiyagdxwgy.supabase.co";
-export const SUPABASE_SECRET_KEY = "sb_secret_mvYcKWR5zn1eJaZziYN2eQ_dZ41JU9K";
+export const SUPABASE_SECRET_KEY = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
+// Example format: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
