@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -13,43 +15,36 @@ export default async function handler(req, res) {
 
     const { agentId, from, to, leadid } = req.body;
 
-    const tenant = "id1_ccsdemo";
-    const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
-
-    // Build base URL with query parameters for authentication/routing
-    const targetUrl = `https://ccs1.simple2call.com/cim/page?tenant=${tenant}&loginkey=${loginkey}&script=cim_api&function=v1`;
-
-    // Send parameters as a JSON payload body (matching your original curl --data-raw structure)
-    const payload = {
-        endpoint: "click2dial",
-        method: "call",
-        userId: "script_admin",
-        userPassword: "wuNAHW11g434!1",
-        agentId: agentId,
-        from: from,
-        to: to,
-        leadid: leadid
-    };
-
+    // 1. Record initiation in Supabase securely
     try {
-        const apiResponse = await fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SECRET_KEY;
+        if (supabaseUrl && supabaseKey) {
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            await supabase.from('click_calls').insert([{
+                leadid: leadid,
+                agentid: agentId,
+                phone: to,
+                from_number: from
+            }]);
+        }
+    } catch (dbErr) {
+        console.error("Failed to log CTI initiation:", dbErr);
+    }
 
+    // 2. Forward request to Simple2Call API
+    try {
+        const apiUrl = `https://api.simple2call.com/api/v1/clickToCall?agentId=${encodeURIComponent(agentId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&leadid=${encodeURIComponent(leadid)}`;
+        
+        const apiResponse = await fetch(apiUrl, { method: 'POST' });
         const responseText = await apiResponse.text();
-        console.log("Simple2Call raw response:", responseText);
 
-        return res.status(200).json({ 
-            success: true, 
-            backendResponse: responseText 
+        return res.status(200).json({
+            success: true,
+            backendResponse: responseText
         });
-
     } catch (error) {
-        console.error("Proxy error:", error);
+        console.error("Proxy Error:", error);
         return res.status(500).json({ success: false, error: error.message });
     }
 }
