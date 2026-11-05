@@ -45,22 +45,25 @@ export default async function handler(req, res) {
             parsedResponse = { raw: responseText };
         }
 
-        // Check if Simple2Call reported an error/failure in its body or status
         const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
         const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
-
         const returnedCallId = parsedResponse.callId || parsedResponse.callid || null;
 
-        // Log CTI attempt to Supabase (flagging status if failed)
+        // Immediately log the CTI trigger in Supabase click_calls table
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
-        await supabase.from('click_calls').insert([{
+        const { error: dbError } = await supabase.from('click_calls').insert([{
             leadid: generatedLeadId,
             agentid: agentId,
             phone: to,
             from_number: from,
             callid: returnedCallId,
-            status: isApiFailed ? `Failed: ${errorMessage}` : 'Initiated'
+            status: isApiFailed ? `Failed: ${errorMessage}` : 'Initiated',
+            initiated_at: new Date().toISOString() // Ensures correct timestamp format
         }]);
+
+        if (dbError) {
+            console.error("Supabase CTI Insert Error:", dbError);
+        }
 
         if (isApiFailed) {
             return res.status(400).json({
