@@ -13,17 +13,9 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // This correctly reads your keys from Vercel Environment Variables
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-        console.error("Missing Supabase environment variables in Vercel!");
-        return res.status(500).json({ 
-            success: false, 
-            error: "Server configuration error: SUPABASE_URL or SUPABASE_SECRET_KEY is missing." 
-        });
-    }
+    // Hardcoded temporarily to bypass Vercel env variable sync issues
+    const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
+    const supabaseKey = "sb_secret_mvYcKWR5zn1eJaZziYN2eQ_dZ41JU9K";
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
