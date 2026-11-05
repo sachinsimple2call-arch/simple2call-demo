@@ -13,6 +13,7 @@
             --text-color: #1e293b;
             --border-color: #e2e8f0;
             --success: #16a34a;
+            --danger: #dc2626;
             --secondary: #475569;
         }
         body {
@@ -36,7 +37,7 @@
         .btn-call:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .btn-history { background-color: var(--secondary); padding: 5px 10px; font-size: 0.8rem; width: auto; margin-left: 4px; }
         .btn-history:hover { background-color: #334155; }
-        .logout-btn { background-color: #dc2626; width: auto; padding: 4px 10px; font-size: 0.75rem; }
+        .logout-btn { background-color: var(--danger); width: auto; padding: 4px 10px; font-size: 0.75rem; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
         th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
         th { background-color: #f1f5f9; }
@@ -134,7 +135,7 @@
     ];
 
     let currentFilteredPhone = null;
-    let isCalling = false; // Prevents double-clicks
+    let isCalling = false;
 
     function handleLogin() {
         const agentId = document.getElementById("loginAgentId").value.trim();
@@ -149,13 +150,11 @@
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
         renderCustomers();
-        
         fetchAllHistory();
     }
 
     function handleLogout() {
         document.getElementById("dashboardScreen").classList.add("hidden");
-        document.getElementById("loginScreen").classList.add("hidden"); // fixed
         document.getElementById("loginScreen").classList.remove("hidden");
     }
 
@@ -197,7 +196,7 @@
     }
 
     async function triggerClickToCall(name, phone) {
-        if (isCalling) return; // Prevent multiple triggers
+        if (isCalling) return;
         isCalling = true;
 
         const btn = document.getElementById(`btn-call-${phone}`);
@@ -232,10 +231,11 @@
 
             if (result.success) {
                 alert(`Click-to-Call triggered successfully for ${name}!`);
-                setTimeout(() => fetchAllHistory(currentFilteredPhone), 3000);
             } else {
-                throw new Error(result.error || "API error");
+                alert(`Call Failed: ${result.error || "Unknown error from provider"}`);
             }
+
+            setTimeout(() => fetchAllHistory(currentFilteredPhone), 2000);
 
         } catch (error) {
             console.error("Click-to-Call Error:", error);
@@ -274,10 +274,7 @@
                 return;
             }
 
-            if (!data.success) {
-                console.error("API error:", data.error);
-                return;
-            }
+            if (!data.success) return;
 
             const logsContainer = document.getElementById("callLogs");
             let htmlContent = "";
@@ -301,13 +298,17 @@
             if (data.cti && data.cti.length > 0) {
                 htmlContent += data.cti.map(c => {
                     const custName = getCustomerName(c.phone);
+                    const isFailed = c.status && c.status.startsWith('Failed');
+                    const statusColor = isFailed ? '#dc2626' : '#2563eb';
+                    const statusText = c.status || 'Initiated';
                     const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
+
                     return `
                         <div class="log-item" style="background: #f8fafc;">
                             <strong>[${c.initiated_at ? c.initiated_at.replace('T', ' ').substring(0, 19) : 'N/A'}] [CTI Trigger]</strong> 
                             Customer: <b>${custName} (${c.phone})</b> | 
-                            Agent: <b>${c.agentid}</b> 
-                            <span style="color: #2563eb">${matchedCallId}</span>
+                            Agent: <b>${c.agentid}</b> | 
+                            Status: <span style="color: ${statusColor}">${statusText}</span>${matchedCallId}
                         </div>
                     `;
                 }).join("");
