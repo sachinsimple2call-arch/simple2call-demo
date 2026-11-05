@@ -105,7 +105,7 @@
             background-color: #f1f5f9;
         }
         .log-list {
-            max-height: 160px;
+            max-height: 200px;
             overflow-y: auto;
             font-size: 0.8rem;
         }
@@ -167,7 +167,7 @@
         <div class="card">
             <h2>Add New Customer</h2>
             <div class="form-group">
-                <input type="text" id="custName" placeholder="Customer Name (e.g.,Sachin Waghmare)">
+                <input type="text" id="custName" placeholder="Customer Name (e.g., Sachin Waghmare)">
             </div>
             <div class="form-group">
                 <input type="text" id="custPhone" placeholder="Phone Number (e.g., 918452080008)">
@@ -190,9 +190,9 @@
         </div>
 
         <div class="card">
-            <h2>Live CTI API Call Logs & Responses</h2>
+            <h2>Live Database Call History (Supabase CDR)</h2>
             <div id="callLogs" class="log-list">
-                <div class="log-item">[System] Dashboard ready. Authenticated successfully.</div>
+                <div class="log-item">[System] Connecting to Supabase call logs...</div>
             </div>
         </div>
 
@@ -204,36 +204,30 @@
     let customers = [
         { name: "Sachin Waghmare", phone: "918452080008" },
         { name: "Neeraj Parikh", phone: "919322212193" },
-          { name: "Bala Murugan", phone: "918508361792" }
+        { name: "Bala Murugan", phone: "918508361792" }
     ];
-    let logs = [];
 
     function handleLogin() {
-    const agentId = document.getElementById("loginAgentId").value.trim();
-    const pass = document.getElementById("loginPassword").value.trim();
+        const agentId = document.getElementById("loginAgentId").value.trim();
+        const pass = document.getElementById("loginPassword").value.trim();
 
-    if(!agentId || !pass) {
-        alert("Please enter both Agent ID and Password.");
-        return;
-    }
-
-    document.getElementById("activeAgentDisplay").innerText = agentId;
-    document.getElementById("loginScreen").classList.add("hidden");
-    document.getElementById("dashboardScreen").classList.remove("hidden");
-    renderCustomers();
-    
-    // FETCH CALL LOGS UPON LOGIN
-    fetchCallLogs();
-}
+        if(!agentId || !pass) {
+            alert("Please enter both Agent ID and Password.");
+            return;
+        }
 
         document.getElementById("activeAgentDisplay").innerText = agentId;
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
         renderCustomers();
+        
+        // Fetch real call logs from Supabase upon login
+        fetchCallLogs();
     }
 
     function handleLogout() {
         document.getElementById("dashboardScreen").classList.add("hidden");
+        document.getElementById("loginScreen").classList.add("hidden"); // fixed toggle
         document.getElementById("loginScreen").classList.remove("hidden");
     }
 
@@ -265,32 +259,11 @@
         document.getElementById("custPhone").value = "";
         renderCustomers();
     }
-    async function loadCallLogs() {
-    try {
-        // You can query Supabase directly using its public REST API or through your own Vercel API route
-        const response = await fetch(`https://your-supabase-project.supabase.co/rest/v1/call_logs?select=*&order=callstart.desc&limit=10`, {
-            headers: {
-                'apikey': 'YOUR_SUPABASE_ANON_KEY',
-                'Authorization': 'Bearer YOUR_SUPABASE_ANON_KEY'
-            }
-        });
-        const logsData = await response.json();
-        
-        const logsContainer = document.getElementById("callLogs");
-        logsContainer.innerHTML = logsData.map(l => `
-            <div class="log-item">
-                <strong>[${l.callstart}]</strong> Call ID: ${l.callid} | Phone: ${l.phone} | Status: <b>${l.callresult}</b> (Talk Time: ${l.talktime}s)
-            </div>
-        `).join("");
-    } catch (e) {
-        console.error("Error loading logs", e);
-    }
-    }
+
     async function triggerClickToCall(name, phone) {
         const agentId = document.getElementById("activeAgentDisplay").innerText;
         const fromNumber = document.getElementById("configFromNumber").value.trim();
         const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
-
         const timestamp = new Date().toLocaleTimeString();
 
         try {
@@ -311,63 +284,70 @@
 
             if (result.success) {
                 const serverMsg = result.backendResponse ? ` | Res: ${result.backendResponse.trim()}` : '';
-                const logMsg = `[${timestamp}] SUCCESS | Agent: ${agentId} | To: ${phone}${serverMsg}`;
-                logs.unshift(logMsg);
-                renderLogs();
-                alert(`Click-to-Call triggered successfully for ${name}!`);
+                alert(`Click-to-Call triggered successfully for ${name}!` + serverMsg);
+                // Immediately fetch logs after triggering a call
+                setTimeout(fetchCallLogs, 2000);
             } else {
                 throw new Error(result.error || "API error");
             }
 
         } catch (error) {
             console.error("API Error:", error);
-            const logMsg = `[${timestamp}] ERROR | Failed to trigger call for ${name}: ${error.message}`;
-            logs.unshift(logMsg);
-            renderLogs();
             alert(`Failed to trigger call: ${error.message}`);
         }
     }
-
-    function renderLogs() {
-        const logsContainer = document.getElementById("callLogs");
-        logsContainer.innerHTML = logs.map(l => `<div class="log-item">${l}</div>`).join("");
-    }
-    async function fetchCallLogs() {
-    try {
-        // Query your Supabase public REST API directly from the frontend
-        // (Using your public project URL and anon/public key)
-        const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
-        // Replace with your public anon/publishable key if needed, or query via a Vercel API route
-        const supabaseAnonKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
-
-        const response = await fetch(`${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`, {
-            headers: {
-                'apikey': supabaseAnonKey,
-                'Authorization': `Bearer ${supabaseAnonKey}`
-            }
-        });
-
-        const logsData = await response.json();
-        
-        if (Array.isArray(logsData)) {
-            const logsContainer = document.getElementById("callLogs");
-            logsContainer.innerHTML = logsData.map(l => `
-                <div class="log-item">
-                    <strong>[${l.callstart || 'N/A'}]</strong> 
-                    Agent: <b>${l.agentid}</b> | 
-                    Phone: <b>${l.phone}</b> | 
-                    Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult}</span> 
-                    (Talk: ${l.talktime}s)
-                </div>
-            `).join("");
-        }
-    } catch (e) {
-        console.error("Error fetching call logs:", e);
-    }
+    function renderCustomers() {
+    const tbody = document.querySelector("#customerTable tbody");
+    tbody.innerHTML = "";
+    customers.forEach((c) => {
+        tbody.innerHTML += `
+            <tr>
+                <td><b>${c.name}</b></td>
+                <td>${c.phone}</td>
+                <td>
+                    <button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
+                    <button class="btn-history" onclick="fetchCallLogs('${c.phone}', '${c.name}')" style="background:#475569; padding:5px 10px; font-size:0.8rem; width:auto; margin-left:4px;">History</button>
+                </td>
+            </tr>
+        `;
+    });
 }
 
-// Automatically fetch logs when dashboard loads, and refresh every 10 seconds
-setInterval(fetchCallLogs, 10000);
+    async function fetchCallLogs() {
+        try {
+            const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
+            const supabaseKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
+
+            const response = await fetch(`${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`, {
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`
+                }
+            });
+
+            const logsData = await response.json();
+            
+            const logsContainer = document.getElementById("callLogs");
+            if (Array.isArray(logsData) && logsData.length > 0) {
+                logsContainer.innerHTML = logsData.map(l => `
+                    <div class="log-item">
+                        <strong>[${l.callstart || 'N/A'}]</strong> 
+                        Agent: <b>${l.agentid}</b> | 
+                        Phone: <b>${l.phone}</b> | 
+                        Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult}</span> 
+                        (Talk: ${l.talktime}s)
+                    </div>
+                `).join("");
+            } else {
+                logsContainer.innerHTML = `<div class="log-item">[System] No call logs found in database yet.</div>`;
+            }
+        } catch (e) {
+            console.error("Error fetching call logs:", e);
+        }
+    }
+
+    // Automatically refresh logs every 10 seconds
+    setInterval(fetchCallLogs, 10000);
 </script>
 
 </body>
