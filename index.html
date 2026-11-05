@@ -196,7 +196,7 @@
     }
 
     async function triggerClickToCall(name, phone) {
-        if (isCalling) return; // Prevent double-clicks
+        if (isCalling) return;
         isCalling = true;
 
         const btn = document.getElementById(`btn-call-${phone}`);
@@ -283,11 +283,13 @@
             if (data.cdr && data.cdr.length > 0) {
                 data.cdr.forEach(l => {
                     const timeVal = l.callstart || '';
+                    const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
+                    
                     combinedLogs.push({
-                        timestamp: timeVal ? new Date(timeVal).getTime() : 0,
+                        timestamp: isoTime ? new Date(isoTime).getTime() : 0,
                         html: `
                             <div class="log-item">
-                                <strong>[${timeVal || 'N/A'}] [CDR]</strong> 
+                                <strong>[${timeVal}] [CDR]</strong> 
                                 Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
                                 Agent: <b>${l.agentid}</b> | 
                                 Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult || 'Completed'}</span> 
@@ -302,13 +304,14 @@
             if (data.cti && data.cti.length > 0) {
                 data.cti.forEach(c => {
                     const timeVal = c.initiated_at || '';
+                    const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
                     const timeStr = timeVal ? timeVal.replace('T', ' ').substring(0, 19) : '';
                     const isFailed = c.status && c.status.startsWith('Failed');
                     const statusText = c.status || 'Initiated';
                     const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
 
                     combinedLogs.push({
-                        timestamp: timeVal ? new Date(timeVal).getTime() : 0,
+                        timestamp: isoTime ? new Date(isoTime).getTime() : 0,
                         html: `
                             <div class="log-item" style="background: #f8fafc;">
                                 <strong>[${timeStr}] [CTI Trigger]</strong> 
@@ -321,8 +324,8 @@
                 });
             }
 
-            // 3. Sort all logs together in descending order (Newest first)
-            combinedLogs.sort((a, b) => b.timestamp - a.timestamp);
+            // 3. Sort all logs together in descending order (Newest first) with safe fallback
+            combinedLogs.sort((a, b) => (isNaN(b.timestamp) ? 0 : b.timestamp) - (isNaN(a.timestamp) ? 0 : a.timestamp));
 
             let htmlContent = combinedLogs.map(item => item.html).join("");
             logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
