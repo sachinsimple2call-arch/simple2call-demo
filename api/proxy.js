@@ -45,15 +45,14 @@ export default async function handler(req, res) {
             parsedResponse = { raw: responseText };
         }
 
-        console.log("Simple2Call Raw Response:", parsedResponse);
-
         const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
         const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
         
-        // Extract callId dynamically from any possible property name
-        const returnedCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId || null;
+        // Extract callId and parse as integer for bigint column
+        const rawCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId;
+        const returnedCallId = rawCallId ? parseInt(rawCallId, 10) : null;
 
-        // Force insert into Supabase click_calls
+        // Insert into Supabase click_calls matching your exact table columns
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         
         const insertPayload = {
@@ -61,8 +60,7 @@ export default async function handler(req, res) {
             agentid: agentId,
             phone: to,
             from_number: from,
-            callid: returnedCallId ? String(returnedCallId) : null,
-            status: isApiFailed ? `Failed: ${errorMessage}` : 'Initiated',
+            callid: !isNaN(returnedCallId) ? returnedCallId : null,
             initiated_at: new Date().toISOString()
         };
 
