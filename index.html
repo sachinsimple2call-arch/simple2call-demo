@@ -22,26 +22,115 @@
             margin: 0;
             padding: 16px;
         }
-        .container { max-width: 100%; margin: 0 auto; }
-        .hidden { display: none !important; }
-        h2 { font-size: 1.1rem; margin-bottom: 12px; color: #0f172a; border-bottom: 2px solid var(--primary); padding-bottom: 4px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #475569; }
-        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem; }
-        button { background-color: var(--primary); color: white; border: none; padding: 9px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; width: 100%; }
-        button:hover { background-color: var(--primary-hover); }
-        .btn-call { background-color: var(--success); padding: 5px 10px; font-size: 0.8rem; width: auto; }
-        .btn-call:hover { background-color: #15803d; }
-        .btn-history { background-color: var(--secondary); padding: 5px 10px; font-size: 0.8rem; width: auto; margin-left: 4px; }
-        .btn-history:hover { background-color: #334155; }
-        .logout-btn { background-color: #dc2626; width: auto; padding: 4px 10px; font-size: 0.75rem; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
-        th { background-color: #f1f5f9; }
-        .log-list { max-height: 250px; overflow-y: auto; font-size: 0.8rem; }
-        .log-item { padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-family: monospace; word-break: break-all; }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #0f172a;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 4px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #475569;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 9px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn-call {
+            background-color: var(--success);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+        .btn-call:hover {
+            background-color: #15803d;
+        }
+        .btn-history {
+            background-color: var(--secondary);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-left: 4px;
+        }
+        .btn-history:hover {
+            background-color: #334155;
+        }
+        .logout-btn {
+            background-color: #dc2626;
+            width: auto;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #f1f5f9;
+        }
+        .log-list {
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .log-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border-color);
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -117,7 +206,7 @@
                 <button onclick="fetchAllHistory(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
             </div>
             <div id="callLogs" class="log-list">
-                <div class="log-item">[System] Connecting to secure backend...</div>
+                <div class="log-item">[System] Connecting to Supabase database...</div>
             </div>
         </div>
 
@@ -133,6 +222,8 @@
     ];
 
     let currentFilteredPhone = null;
+    const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
+    const supabaseKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
 
     function handleLogin() {
         const agentId = document.getElementById("loginAgentId").value.trim();
@@ -199,6 +290,25 @@
         const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
 
         try {
+            // 1. Record Click-to-Call initiation in click_calls table
+            await fetch(`${supabaseUrl}/rest/v1/click_calls`, {
+                method: 'POST',
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    leadid: leadid,
+                    agentid: agentId,
+                    phone: phone,
+                    from_number: fromNumber
+                })
+            });
+
+            fetchAllHistory(currentFilteredPhone);
+
+            // 2. Trigger proxy API call to Simple2Call
             const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -210,13 +320,7 @@
                 })
             });
 
-            const text = await response.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                throw new Error("Server response was not valid JSON: " + text);
-            }
+            const result = await response.json();
 
             if (result.success) {
                 alert(`Click-to-Call triggered successfully for ${name}!`);
@@ -242,31 +346,29 @@
                 titleElement.innerText = "Live Database Call History (CDR & CTI)";
             }
 
-            let url = '/api/history';
-            if (phone) url += `?phone=${phone}`;
+            // Fetch CDR call logs and Click-to-Call initiations simultaneously
+            let cdrUrl = `${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`;
+            let ctiUrl = `${supabaseUrl}/rest/v1/click_calls?select=*&order=initiated_at.desc&limit=15`;
 
-            const res = await fetch(url);
-            const text = await res.text();
-            
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (jsonErr) {
-                console.error("Server returned non-JSON response:", text);
-                return;
+            if (phone) {
+                cdrUrl += `&phone=eq.${phone}`;
+                ctiUrl += `&phone=eq.${phone}`;
             }
 
-            if (!data.success) {
-                console.error("API error:", data.error);
-                return;
-            }
+            const [cdrRes, ctiRes] = await Promise.all([
+                fetch(cdrUrl, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }),
+                fetch(ctiUrl, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } })
+            ]);
+
+            const cdrData = await cdrRes.json();
+            const ctiData = await ctiRes.json();
 
             const logsContainer = document.getElementById("callLogs");
             let htmlContent = "";
 
             // Render Completed/Inbound/Outbound CDR Logs
-            if (data.cdr && data.cdr.length > 0) {
-                htmlContent += data.cdr.map(l => {
+            if (Array.isArray(cdrData) && cdrData.length > 0) {
+                htmlContent += cdrData.map(l => {
                     const custName = getCustomerName(l.phone);
                     const statusColor = l.callresult === 'Connected' ? '#16a34a' : '#dc2626';
                     return `
@@ -282,8 +384,8 @@
             }
 
             // Render Click-to-Call Initiations
-            if (data.cti && data.cti.length > 0) {
-                htmlContent += data.cti.map(c => {
+            if (Array.isArray(ctiData) && ctiData.length > 0) {
+                htmlContent += ctiData.map(c => {
                     const custName = getCustomerName(c.phone);
                     return `
                         <div class="log-item" style="background: #f8fafc;">
