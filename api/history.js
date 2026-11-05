@@ -10,20 +10,24 @@ export default async function handler(req, res) {
     }
 
     if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ success: false, error: 'Method not allowed' });
     }
 
+    // Safely check environment variables
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SECRET_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        return res.status(500).json({ error: "Server configuration error" });
+        return res.status(500).json({ 
+            success: false, 
+            error: "Server configuration error: Missing Supabase credentials in Vercel" 
+        });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { phone } = req.query;
-
     try {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { phone } = req.query;
+
         let cdrQuery = supabase.from('call_logs').select('*').order('callstart', { ascending: false }).limit(15);
         let ctiQuery = supabase.from('click_calls').select('*').order('initiated_at', { ascending: false }).limit(15);
 
@@ -34,16 +38,14 @@ export default async function handler(req, res) {
 
         const [cdrRes, ctiRes] = await Promise.all([cdrQuery, ctiQuery]);
 
-        if (cdrRes.error) throw cdrRes.error;
-        if (ctiRes.error) throw ctiRes.error;
-
         return res.status(200).json({
             success: true,
             cdr: cdrRes.data || [],
             cti: ctiRes.data || []
         });
+
     } catch (err) {
-        console.error("Fetch History Error:", err);
+        console.error("Fetch History API Error:", err);
         return res.status(500).json({ success: false, error: err.message });
     }
 }
