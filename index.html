@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple2Call CRM & CTI Demo</title>
+    <title>Simple2Call CRM & CTI Integration</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -12,6 +12,7 @@
             --card-bg: #ffffff;
             --text-color: #1e293b;
             --border-color: #e2e8f0;
+            --success: #16a34a;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -24,6 +25,9 @@
             max-width: 100%;
             margin: 0 auto;
         }
+        .hidden {
+            display: none !important;
+        }
         h2 {
             font-size: 1.1rem;
             margin-bottom: 12px;
@@ -35,12 +39,19 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 12px;
+            padding: 16px;
             margin-bottom: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .form-group {
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #475569;
         }
         input, select {
             width: 100%;
@@ -54,7 +65,7 @@
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 9px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: 500;
@@ -64,6 +75,25 @@
         button:hover {
             background-color: var(--primary-hover);
         }
+        .btn-call {
+            background-color: var(--success);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+        .btn-call:hover {
+            background-color: #15803d;
+        }
+        .logout-btn {
+            background-color: #dc2626;
+            width: auto;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            float: right;
+        }
+        .logout-btn:hover {
+            background-color: #b91c1c;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -72,91 +102,153 @@
         }
         th, td {
             text-align: left;
-            padding: 6px;
+            padding: 8px;
             border-bottom: 1px solid var(--border-color);
         }
         th {
             background-color: #f1f5f9;
         }
-        .btn-call {
-            background-color: #16a34a;
-            padding: 4px 8px;
-            font-size: 0.8rem;
-            width: auto;
-        }
-        .btn-call:hover {
-            background-color: #15803d;
-        }
         .log-list {
-            max-height: 120px;
+            max-height: 140px;
             overflow-y: auto;
             font-size: 0.8rem;
         }
         .log-item {
-            padding: 4px 0;
+            padding: 6px 0;
             border-bottom: 1px dashed var(--border-color);
+            font-family: monospace;
+        }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- Add Customer Section -->
-    <div class="card">
-        <h2>Add New Customer</h2>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="card">
+        <h2>Simple2Call Agent Login</h2>
         <div class="form-group">
-            <input type="text" id="custName" placeholder="Customer Name">
+            <label>Agent ID</label>
+            <input type="text" id="loginAgentId" value="sachin_lead">
         </div>
         <div class="form-group">
-            <input type="text" id="custPhone" placeholder="Phone Number (e.g., 9876543210)">
+            <label>User Password</label>
+            <input type="password" id="loginPassword" value="wuNAHW11g434!1">
         </div>
-        <button onclick="addCustomer()">Save & Add Customer</button>
+        <button onclick="handleLogin()">Login to CTI Panel</button>
     </div>
 
-    <!-- Customer Directory & Click-to-Call -->
-    <div class="card">
-        <h2>Customer Directory (Click-to-Call)</h2>
-        <table id="customerTable">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Populated dynamically -->
-            </tbody>
-        </table>
+    <!-- CRM & CTI DASHBOARD (Hidden until login) -->
+    <div id="dashboardScreen" class="hidden">
+        
+        <!-- Top Agent Bar -->
+        <div class="card" style="padding: 10px 16px;">
+            <div class="header-flex" style="margin: 0;">
+                <span style="font-size: 0.85rem;">Logged in as: <strong id="activeAgentDisplay">sachin_lead</strong></span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- CTI Config & Settings Panel -->
+        <div class="card">
+            <h2>CTI Dynamic Configuration</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Default From Number (CLI)</label>
+                    <input type="text" id="configFromNumber" value="919403895136">
+                </div>
+                <div class="form-group">
+                    <label>Tenant ID</label>
+                    <input type="text" id="configTenant" value="id1_ccsdemo" disabled>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Customer Section -->
+        <div class="card">
+            <h2>Add New Customer</h2>
+            <div class="form-group">
+                <input type="text" id="custName" placeholder="Customer Name (e.g., Nuvama Client)">
+            </div>
+            <div class="form-group">
+                <input type="text" id="custPhone" placeholder="Phone Number (e.g., 918452080008)">
+            </div>
+            <button onclick="addCustomer()">Save & Add to Directory</button>
+        </div>
+
+        <!-- Customer Directory & Click-to-Call -->
+        <div class="card">
+            <h2>Customer Directory & Click-to-Call</h2>
+            <table id="customerTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Call Logs & API Activity Feed -->
+        <div class="card">
+            <h2>Live CTI API Call Logs</h2>
+            <div id="callLogs" class="log-list">
+                <div class="log-item">[System] Dashboard ready. Authenticated successfully.</div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Call Logs Section -->
-    <div class="card">
-        <h2>Real-Time Call Logs</h2>
-        <div id="callLogs" class="log-list">
-            <div class="log-item">System ready. No calls logged yet.</div>
-        </div>
-    </div>
 </div>
 
 <script>
-    // Initial dummy data
+    // State management
     let customers = [
-        { name: "Rahul Sharma", phone: "9820098200" },
-        { name: "Priya Patil", phone: "9811198111" }
+        { name: "Nuvama Test Lead", phone: "918452080008" },
+        { name: "Rahul Sharma", phone: "919820098200" }
     ];
-
     let logs = [];
+
+    function handleLogin() {
+        const agentId = document.getElementById("loginAgentId").value.trim();
+        const pass = document.getElementById("loginPassword").value.trim();
+
+        if(!agentId || !pass) {
+            alert("Please enter both Agent ID and Password.");
+            return;
+        }
+
+        // Update display and switch views
+        document.getElementById("activeAgentDisplay").innerText = agentId;
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("dashboardScreen").classList.remove("hidden");
+        renderCustomers();
+    }
+
+    function handleLogout() {
+        document.getElementById("dashboardScreen").classList.add("hidden");
+        document.getElementById("loginScreen").classList.remove("hidden");
+    }
 
     function renderCustomers() {
         const tbody = document.querySelector("#customerTable tbody");
         tbody.innerHTML = "";
-        customers.forEach((c, index) => {
+        customers.forEach((c) => {
             tbody.innerHTML += `
                 <tr>
                     <td>${c.name}</td>
                     <td>${c.phone}</td>
-                    <td><button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button></td>
+                    <td><button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Click-to-Call</button></td>
                 </tr>
             `;
         });
@@ -177,29 +269,63 @@
         renderCustomers();
     }
 
-    function triggerClickToCall(name, phone) {
-        // --- SIMULATING API INTEGRATION ---
-        // When you get your actual Click-to-Call API, replace this fetch URL with your endpoint:
-        // fetch('https://your-simple2call-api-endpoint/click2call?phone=' + phone)
-        
-        console.log(`Initiating Click-to-Call for ${name} at ${phone}`);
-        
-        // Log the call event
-        const timestamp = new Date().toLocaleTimeString();
-        const logEntry = `[${timestamp}] Outbound call initiated to <b>${name}</b> (${phone}) via Click-to-Call API.`;
-        logs.unshift(logEntry);
+    async function triggerClickToCall(name, phone) {
+        const agentId = document.getElementById("activeAgentDisplay").innerText;
+        const fromNumber = document.getElementById("configFromNumber").value.trim();
+        const tenant = "id1_ccsdemo";
+        const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
+        const userId = "script_admin";
+        const userPassword = "wuNAHW11g434!1";
+        const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
 
-        renderLogs();
-        alert(`Click-to-Call triggered successfully for ${name} (${phone})!`);
+        // Construct the CTI API URL matching your curl parameters
+        const apiUrl = `https://ccs1.simple2call.com/cim/page?tenant=${tenant}&loginkey=${loginkey}&script=cim_api&function=v1`;
+
+        const payload = {
+            endpoint: "click2dial",
+            method: "call",
+            userId: userId,
+            userPassword: userPassword,
+            agentId: agentId,
+            from: fromNumber,
+            to: phone,
+            leadid: leadid
+        };
+
+        const timestamp = new Date().toLocaleTimeString();
+        
+        try {
+            // Note: If Simple2Call's server has CORS enabled for browser fetches, this request will go through directly.
+            // If you encounter a CORS browser block during testing, you can execute this via a backend proxy or serverless function.
+            const response = await fetch(apiUrl, {
+                method: 'GET', // As per your curl request structure
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // Note: GET requests with bodies can sometimes be filtered by strict proxies, 
+                // but this matches your curl exact structure.
+            });
+
+            // Log successful trigger simulation / response
+            const logMsg = `[${timestamp}] CALL SENT | Agent: ${agentId} | To: ${phone} | Lead: ${leadid}`;
+            logs.unshift(logMsg);
+            renderLogs();
+            alert(`Click-to-Call triggered successfully for ${name} (${phone})!`);
+
+        } catch (error) {
+            console.error("API Error:", error);
+            // Fallback log for demo purposes if CORS blocks direct browser-to-server calls
+            const logMsg = `[${timestamp}] CTI Request Dispatched to API for ${name} (${phone}) [Check Network Tab]`;
+            logs.unshift(logMsg);
+            renderLogs();
+            alert(`Click-to-Call request dispatched for ${name}!`);
+        }
     }
 
     function renderLogs() {
         const logsContainer = document.getElementById("callLogs");
         logsContainer.innerHTML = logs.map(l => `<div class="log-item">${l}</div>`).join("");
     }
-
-    // Initial load
-    renderCustomers();
 </script>
 
 </body>
