@@ -89,10 +89,6 @@
             width: auto;
             padding: 4px 10px;
             font-size: 0.75rem;
-            float: right;
-        }
-        .logout-btn:hover {
-            background-color: #b91c1c;
         }
         table {
             width: 100%;
@@ -122,7 +118,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -144,18 +139,16 @@
         <button onclick="handleLogin()">Login to CTI Panel</button>
     </div>
 
-    <!-- CRM & CTI DASHBOARD (Hidden until login) -->
+    <!-- CRM & CTI DASHBOARD -->
     <div id="dashboardScreen" class="hidden">
         
-        <!-- Top Agent Bar -->
         <div class="card" style="padding: 10px 16px;">
-            <div class="header-flex" style="margin: 0;">
+            <div class="header-flex">
                 <span style="font-size: 0.85rem;">Logged in as: <strong id="activeAgentDisplay">sachin_lead</strong></span>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
             </div>
         </div>
 
-        <!-- CTI Config & Settings Panel -->
         <div class="card">
             <h2>CTI Dynamic Configuration</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -170,7 +163,6 @@
             </div>
         </div>
 
-        <!-- Add Customer Section -->
         <div class="card">
             <h2>Add New Customer</h2>
             <div class="form-group">
@@ -182,7 +174,6 @@
             <button onclick="addCustomer()">Save & Add to Directory</button>
         </div>
 
-        <!-- Customer Directory & Click-to-Call -->
         <div class="card">
             <h2>Customer Directory & Click-to-Call</h2>
             <table id="customerTable">
@@ -193,13 +184,10 @@
                         <th>Action</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Populated dynamically -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 
-        <!-- Call Logs & API Activity Feed -->
         <div class="card">
             <h2>Live CTI API Call Logs</h2>
             <div id="callLogs" class="log-list">
@@ -212,7 +200,6 @@
 </div>
 
 <script>
-    // State management
     let customers = [
         { name: "Nuvama Test Lead", phone: "918452080008" },
         { name: "Rahul Sharma", phone: "919820098200" }
@@ -228,7 +215,6 @@
             return;
         }
 
-        // Update display and switch views
         document.getElementById("activeAgentDisplay").innerText = agentId;
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("dashboardScreen").classList.remove("hidden");
@@ -272,53 +258,42 @@
     async function triggerClickToCall(name, phone) {
         const agentId = document.getElementById("activeAgentDisplay").innerText;
         const fromNumber = document.getElementById("configFromNumber").value.trim();
-        const tenant = "id1_ccsdemo";
-        const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
-        const userId = "script_admin";
-        const userPassword = "wuNAHW11g434!1";
         const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
 
-        // Construct the CTI API URL matching your curl parameters
-        const apiUrl = `https://ccs1.simple2call.com/cim/page?tenant=${tenant}&loginkey=${loginkey}&script=cim_api&function=v1`;
-
-        const payload = {
-            endpoint: "click2dial",
-            method: "call",
-            userId: userId,
-            userPassword: userPassword,
-            agentId: agentId,
-            from: fromNumber,
-            to: phone,
-            leadid: leadid
-        };
-
         const timestamp = new Date().toLocaleTimeString();
-        
+
         try {
-            // Note: If Simple2Call's server has CORS enabled for browser fetches, this request will go through directly.
-            // If you encounter a CORS browser block during testing, you can execute this via a backend proxy or serverless function.
-            const response = await fetch(apiUrl, {
-                method: 'GET', // As per your curl request structure
+            // Call our own Vercel serverless proxy route instead of the external URL directly
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                // Note: GET requests with bodies can sometimes be filtered by strict proxies, 
-                // but this matches your curl exact structure.
+                body: JSON.stringify({
+                    agentId: agentId,
+                    from: fromNumber,
+                    to: phone,
+                    leadid: leadid
+                })
             });
 
-            // Log successful trigger simulation / response
-            const logMsg = `[${timestamp}] CALL SENT | Agent: ${agentId} | To: ${phone} | Lead: ${leadid}`;
-            logs.unshift(logMsg);
-            renderLogs();
-            alert(`Click-to-Call triggered successfully for ${name} (${phone})!`);
+            const result = await response.json();
+
+            if (result.success) {
+                const logMsg = `[${timestamp}] SUCCESS | Agent: ${agentId} | To: ${phone} | Lead: ${leadid}`;
+                logs.unshift(logMsg);
+                renderLogs();
+                alert(`Click-to-Call triggered successfully for ${name}!`);
+            } else {
+                throw new Error(result.error || "API error");
+            }
 
         } catch (error) {
             console.error("API Error:", error);
-            // Fallback log for demo purposes if CORS blocks direct browser-to-server calls
-            const logMsg = `[${timestamp}] CTI Request Dispatched to API for ${name} (${phone}) [Check Network Tab]`;
+            const logMsg = `[${timestamp}] ERROR | Failed to trigger call for ${name}`;
             logs.unshift(logMsg);
             renderLogs();
-            alert(`Click-to-Call request dispatched for ${name}!`);
+            alert(`Failed to trigger call: ${error.message}`);
         }
     }
 
