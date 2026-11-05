@@ -27,8 +27,8 @@ export default async function handler(req, res) {
             callstart: call.callStart,
             callend: call.callEnd,
             dnis: call.dnis,
-            acd: call.acd,
-            project_id: call.project_id,
+            acd: call.acd || '',
+            project_id: call.project_id || '',
             discby: call.discBy
         }));
 
