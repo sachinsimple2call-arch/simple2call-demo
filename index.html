@@ -209,13 +209,22 @@
     let logs = [];
 
     function handleLogin() {
-        const agentId = document.getElementById("loginAgentId").value.trim();
-        const pass = document.getElementById("loginPassword").value.trim();
+    const agentId = document.getElementById("loginAgentId").value.trim();
+    const pass = document.getElementById("loginPassword").value.trim();
 
-        if(!agentId || !pass) {
-            alert("Please enter both Agent ID and Password.");
-            return;
-        }
+    if(!agentId || !pass) {
+        alert("Please enter both Agent ID and Password.");
+        return;
+    }
+
+    document.getElementById("activeAgentDisplay").innerText = agentId;
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("dashboardScreen").classList.remove("hidden");
+    renderCustomers();
+    
+    // FETCH CALL LOGS UPON LOGIN
+    fetchCallLogs();
+}
 
         document.getElementById("activeAgentDisplay").innerText = agentId;
         document.getElementById("loginScreen").classList.add("hidden");
