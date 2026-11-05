@@ -7,15 +7,15 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
     const { agentId, from, to, leadid } = req.body;
 
-    // 1. Record initiation in Supabase securely
+    // 1. Log CTI initiation to Supabase
     try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         await supabase.from('click_calls').insert([{
-            leadid: leadid,
+            leadid: leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000),
             agentid: agentId,
             phone: to,
             from_number: from
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         console.error("Failed to log CTI initiation:", dbErr);
     }
 
-    // 2. Forward request to Simple2Call API
+    // 2. Trigger actual Click-to-Call API
     try {
         const apiUrl = `https://api.simple2call.com/api/v1/clickToCall?agentId=${encodeURIComponent(agentId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&leadid=${encodeURIComponent(leadid)}`;
         
