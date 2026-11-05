@@ -195,6 +195,12 @@
         return found ? found.name : "Unknown Customer";
     }
 
+    // Standardize time formatting for UI display
+    function formatTimeDisplay(timeVal) {
+        if (!timeVal) return 'N/A';
+        return timeVal.replace('T', ' ').substring(0, 19);
+    }
+
     async function triggerClickToCall(name, phone) {
         if (isCalling) return;
         isCalling = true;
@@ -284,12 +290,13 @@
                 data.cdr.forEach(l => {
                     const timeVal = l.callstart || '';
                     const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
+                    const cleanTimeStr = formatTimeDisplay(timeVal);
                     
                     combinedLogs.push({
                         timestamp: isoTime ? new Date(isoTime).getTime() : 0,
                         html: `
                             <div class="log-item">
-                                <strong>[${timeVal}] [CDR]</strong> 
+                                <strong>[${cleanTimeStr}] [CDR]</strong> 
                                 Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
                                 Agent: <b>${l.agentid}</b> | 
                                 Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult || 'Completed'}</span> 
@@ -305,7 +312,7 @@
                 data.cti.forEach(c => {
                     const timeVal = c.initiated_at || '';
                     const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
-                    const timeStr = timeVal ? timeVal.replace('T', ' ').substring(0, 19) : '';
+                    const cleanTimeStr = formatTimeDisplay(timeVal);
                     const isFailed = c.status && c.status.startsWith('Failed');
                     const statusText = c.status || 'Initiated';
                     const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
@@ -314,7 +321,7 @@
                         timestamp: isoTime ? new Date(isoTime).getTime() : 0,
                         html: `
                             <div class="log-item" style="background: #f8fafc;">
-                                <strong>[${timeStr}] [CTI Trigger]</strong> 
+                                <strong>[${cleanTimeStr}] [CTI Trigger]</strong> 
                                 Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
                                 Agent: <b>${c.agentid}</b> | 
                                 Status: <span style="color: ${isFailed ? '#dc2626' : '#2563eb'}">${statusText}</span>${matchedCallId}
