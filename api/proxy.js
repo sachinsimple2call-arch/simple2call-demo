@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Enable CORS for your frontend
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -17,32 +16,42 @@ export default async function handler(req, res) {
     const tenant = "id1_ccsdemo";
     const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
 
-    // Build the target URL and append all parameters as query strings (since GET requests cannot have a body)
+    // Option A: If Simple2Call expects query parameters (Current setup)
     const targetUrl = new URL(`https://ccs1.simple2call.com/cim/page`);
     targetUrl.searchParams.append('tenant', tenant);
     targetUrl.searchParams.append('loginkey', loginkey);
     targetUrl.searchParams.append('script', 'cim_api');
     targetUrl.searchParams.append('function', 'v1');
-    targetUrl.searchParams.append('endpoint', 'click2dial');
-    targetUrl.searchParams.append('method', 'call');
-    targetUrl.searchParams.append('userId', 'script_admin');
-    targetUrl.searchParams.append('userPassword', 'wuNAHW11g434!1');
-    targetUrl.searchParams.append('agentId', agentId);
-    targetUrl.searchParams.append('from', from);
-    targetUrl.searchParams.append('to', to);
-    targetUrl.searchParams.append('leadid', leadid);
+
+    const payload = {
+        endpoint: "click2dial",
+        method: "call",
+        userId: "script_admin",
+        userPassword: "wuNAHW11g434!1",
+        agentId: agentId,
+        from: from,
+        to: to,
+        leadid: leadid
+    };
 
     try {
-        // Execute GET request without a body
+        // NOTE: If your API specifically requires a POST with a JSON body instead of a GET with query params, 
+        // change method to 'POST' and pass payload in the 'body' property.
         const apiResponse = await fetch(targetUrl.toString(), {
-            method: 'GET',
+            method: 'GET', 
             headers: {
                 'Content-Type': 'application/json'
             }
         });
 
-        const data = await apiResponse.text();
-        return res.status(200).json({ success: true, rawResponse: data });
+        const responseText = await apiResponse.text();
+        console.log("Simple2Call raw response:", responseText);
+
+        return res.status(200).json({ 
+            success: true, 
+            backendResponse: responseText 
+        });
+
     } catch (error) {
         console.error("Proxy error:", error);
         return res.status(500).json({ success: false, error: error.message });
