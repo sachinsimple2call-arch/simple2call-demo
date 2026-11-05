@@ -323,6 +323,42 @@
         const logsContainer = document.getElementById("callLogs");
         logsContainer.innerHTML = logs.map(l => `<div class="log-item">${l}</div>`).join("");
     }
+    async function fetchCallLogs() {
+    try {
+        // Query your Supabase public REST API directly from the frontend
+        // (Using your public project URL and anon/public key)
+        const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
+        // Replace with your public anon/publishable key if needed, or query via a Vercel API route
+        const supabaseAnonKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`, {
+            headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${supabaseAnonKey}`
+            }
+        });
+
+        const logsData = await response.json();
+        
+        if (Array.isArray(logsData)) {
+            const logsContainer = document.getElementById("callLogs");
+            logsContainer.innerHTML = logsData.map(l => `
+                <div class="log-item">
+                    <strong>[${l.callstart || 'N/A'}]</strong> 
+                    Agent: <b>${l.agentid}</b> | 
+                    Phone: <b>${l.phone}</b> | 
+                    Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult}</span> 
+                    (Talk: ${l.talktime}s)
+                </div>
+            `).join("");
+        }
+    } catch (e) {
+        console.error("Error fetching call logs:", e);
+    }
+}
+
+// Automatically fetch logs when dashboard loads, and refresh every 10 seconds
+setInterval(fetchCallLogs, 10000);
 </script>
 
 </body>
