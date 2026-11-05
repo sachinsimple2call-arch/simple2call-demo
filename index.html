@@ -105,7 +105,7 @@
             background-color: #f1f5f9;
         }
         .log-list {
-            max-height: 140px;
+            max-height: 160px;
             overflow-y: auto;
             font-size: 0.8rem;
         }
@@ -113,6 +113,7 @@
             padding: 6px 0;
             border-bottom: 1px dashed var(--border-color);
             font-family: monospace;
+            word-break: break-all;
         }
         .header-flex {
             display: flex;
@@ -189,7 +190,7 @@
         </div>
 
         <div class="card">
-            <h2>Live CTI API Call Logs</h2>
+            <h2>Live CTI API Call Logs & Responses</h2>
             <div id="callLogs" class="log-list">
                 <div class="log-item">[System] Dashboard ready. Authenticated successfully.</div>
             </div>
@@ -263,7 +264,6 @@
         const timestamp = new Date().toLocaleTimeString();
 
         try {
-            // Call our own Vercel serverless proxy route instead of the external URL directly
             const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
@@ -280,7 +280,8 @@
             const result = await response.json();
 
             if (result.success) {
-                const logMsg = `[${timestamp}] SUCCESS | Agent: ${agentId} | To: ${phone} | Lead: ${leadid}`;
+                const serverMsg = result.backendResponse ? ` | Res: ${result.backendResponse.trim()}` : '';
+                const logMsg = `[${timestamp}] SUCCESS | Agent: ${agentId} | To: ${phone}${serverMsg}`;
                 logs.unshift(logMsg);
                 renderLogs();
                 alert(`Click-to-Call triggered successfully for ${name}!`);
@@ -290,7 +291,7 @@
 
         } catch (error) {
             console.error("API Error:", error);
-            const logMsg = `[${timestamp}] ERROR | Failed to trigger call for ${name}`;
+            const logMsg = `[${timestamp}] ERROR | Failed to trigger call for ${name}: ${error.message}`;
             logs.unshift(logMsg);
             renderLogs();
             alert(`Failed to trigger call: ${error.message}`);
