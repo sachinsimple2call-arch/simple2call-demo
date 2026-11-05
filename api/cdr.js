@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SECRET_KEY } from './db-config.js';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,12 +14,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
-    const supabaseKey = "sb_secret_mvYcKWR5zn1eJaZziYN2eQ_dZ41JU9K";
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         const { data_list } = req.body;
 
         if (!data_list || !Array.isArray(data_list)) {
@@ -48,7 +45,6 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ 
             success: true, 
-            version: "v2-nocache",
             message: `Successfully processed ${records.length} call log(s)` 
         });
 
