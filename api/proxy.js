@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         console.error("Failed to log CTI initiation to Supabase:", dbErr);
     }
 
-    // 2. Trigger Simple2Call Click-to-Call API using your working cURL structure
+    // 2. Trigger Simple2Call Click-to-Call API via POST with the JSON body
     try {
         const simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
         
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         };
 
         const apiResponse = await fetch(simple2CallUrl, { 
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
