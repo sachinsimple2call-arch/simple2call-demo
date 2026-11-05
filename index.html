@@ -13,6 +13,7 @@
             --text-color: #1e293b;
             --border-color: #e2e8f0;
             --success: #16a34a;
+            --secondary: #475569;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -84,6 +85,16 @@
         .btn-call:hover {
             background-color: #15803d;
         }
+        .btn-history {
+            background-color: var(--secondary);
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            width: auto;
+            margin-left: 4px;
+        }
+        .btn-history:hover {
+            background-color: #334155;
+        }
         .logout-btn {
             background-color: #dc2626;
             width: auto;
@@ -105,7 +116,7 @@
             background-color: #f1f5f9;
         }
         .log-list {
-            max-height: 200px;
+            max-height: 220px;
             overflow-y: auto;
             font-size: 0.8rem;
         }
@@ -182,7 +193,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Phone</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -190,7 +201,10 @@
         </div>
 
         <div class="card">
-            <h2>Live Database Call History (Supabase CDR)</h2>
+            <div class="header-flex" style="margin-bottom: 12px;">
+                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Database Call History (All Calls)</h2>
+                <button onclick="fetchCallLogs(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
+            </div>
             <div id="callLogs" class="log-list">
                 <div class="log-item">[System] Connecting to Supabase call logs...</div>
             </div>
@@ -207,6 +221,8 @@
         { name: "Bala Murugan", phone: "918508361792" }
     ];
 
+    let currentFilteredPhone = null;
+
     function handleLogin() {
         const agentId = document.getElementById("loginAgentId").value.trim();
         const pass = document.getElementById("loginPassword").value.trim();
@@ -221,13 +237,12 @@
         document.getElementById("dashboardScreen").classList.remove("hidden");
         renderCustomers();
         
-        // Fetch real call logs from Supabase upon login
+        // Fetch call history on login
         fetchCallLogs();
     }
 
     function handleLogout() {
         document.getElementById("dashboardScreen").classList.add("hidden");
-        document.getElementById("loginScreen").classList.add("hidden"); // fixed toggle
         document.getElementById("loginScreen").classList.remove("hidden");
     }
 
@@ -237,9 +252,12 @@
         customers.forEach((c) => {
             tbody.innerHTML += `
                 <tr>
-                    <td>${c.name}</td>
+                    <td><b>${c.name}</b></td>
                     <td>${c.phone}</td>
-                    <td><button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Click-to-Call</button></td>
+                    <td>
+                        <button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
+                        <button class="btn-history" onclick="fetchCallLogs('${c.phone}', '${c.name}')">History</button>
+                    </td>
                 </tr>
             `;
         });
@@ -264,7 +282,6 @@
         const agentId = document.getElementById("activeAgentDisplay").innerText;
         const fromNumber = document.getElementById("configFromNumber").value.trim();
         const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
-        const timestamp = new Date().toLocaleTimeString();
 
         try {
             const response = await fetch('/api/proxy', {
@@ -285,8 +302,8 @@
             if (result.success) {
                 const serverMsg = result.backendResponse ? ` | Res: ${result.backendResponse.trim()}` : '';
                 alert(`Click-to-Call triggered successfully for ${name}!` + serverMsg);
-                // Immediately fetch logs after triggering a call
-                setTimeout(fetchCallLogs, 2000);
+                // Refresh log view after a short delay
+                setTimeout(() => fetchCallLogs(currentFilteredPhone), 3000);
             } else {
                 throw new Error(result.error || "API error");
             }
@@ -296,29 +313,27 @@
             alert(`Failed to trigger call: ${error.message}`);
         }
     }
-    function renderCustomers() {
-    const tbody = document.querySelector("#customerTable tbody");
-    tbody.innerHTML = "";
-    customers.forEach((c) => {
-        tbody.innerHTML += `
-            <tr>
-                <td><b>${c.name}</b></td>
-                <td>${c.phone}</td>
-                <td>
-                    <button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
-                    <button class="btn-history" onclick="fetchCallLogs('${c.phone}', '${c.name}')" style="background:#475569; padding:5px 10px; font-size:0.8rem; width:auto; margin-left:4px;">History</button>
-                </td>
-            </tr>
-        `;
-    });
-}
 
-    async function fetchCallLogs() {
+    async function fetchCallLogs(phone = null, customerName = '') {
         try {
             const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
             const supabaseKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
 
-            const response = await fetch(`${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`, {
+            currentFilteredPhone = phone;
+            
+            const titleElement = document.getElementById("logSectionTitle");
+            if (phone) {
+                titleElement.innerText = `History for ${customerName} (${phone})`;
+            } else {
+                titleElement.innerText = "Live Database Call History (All Calls)";
+            }
+
+            let endpoint = `${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`;
+            if (phone) {
+                endpoint += `&phone=eq.${phone}`;
+            }
+
+            const response = await fetch(endpoint, {
                 headers: {
                     'apikey': supabaseKey,
                     'Authorization': `Bearer ${supabaseKey}`
@@ -339,15 +354,18 @@
                     </div>
                 `).join("");
             } else {
-                logsContainer.innerHTML = `<div class="log-item">[System] No call logs found in database yet.</div>`;
+                logsContainer.innerHTML = `<div class="log-item">[System] No call history found.</div>`;
             }
         } catch (e) {
             console.error("Error fetching call logs:", e);
         }
     }
 
-    // Automatically refresh logs every 10 seconds
-    setInterval(fetchCallLogs, 10000);
+    // Automatically refresh call logs every 10 seconds
+    setInterval(() => {
+        if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
+        fetchCallLogs(currentFilteredPhone);
+    }, 10000);
 </script>
 
 </body>
