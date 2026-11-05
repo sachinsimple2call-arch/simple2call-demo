@@ -45,23 +45,36 @@ export default async function handler(req, res) {
             parsedResponse = { raw: responseText };
         }
 
-        // Extract callId if returned by Simple2Call
+        // Check if Simple2Call reported an error/failure in its body or status
+        const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
+        const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
+
         const returnedCallId = parsedResponse.callId || parsedResponse.callid || null;
 
-        // Securely log CTI initiation to Supabase with the matched callId
+        // Log CTI attempt to Supabase (flagging status if failed)
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         await supabase.from('click_calls').insert([{
             leadid: generatedLeadId,
             agentid: agentId,
             phone: to,
             from_number: from,
-            callid: returnedCallId 
+            callid: returnedCallId,
+            status: isApiFailed ? `Failed: ${errorMessage}` : 'Initiated'
         }]);
+
+        if (isApiFailed) {
+            return res.status(400).json({
+                success: false,
+                error: errorMessage,
+                backendResponse: parsedResponse
+            });
+        }
 
         return res.status(200).json({
             success: true,
             backendResponse: parsedResponse
         });
+
     } catch (error) {
         console.error("Proxy Fetch Error:", error);
         return res.status(500).json({ success: false, error: error.message });
