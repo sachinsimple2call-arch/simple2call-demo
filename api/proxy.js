@@ -45,24 +45,36 @@ export default async function handler(req, res) {
             parsedResponse = { raw: responseText };
         }
 
+        console.log("Simple2Call Raw Response:", parsedResponse);
+
         const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
         const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
-        const returnedCallId = parsedResponse.callId || parsedResponse.callid || null;
+        
+        // Extract callId dynamically from any possible property name
+        const returnedCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId || null;
 
-        // Immediately log the CTI trigger in Supabase click_calls table
+        // Force insert into Supabase click_calls
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
-        const { error: dbError } = await supabase.from('click_calls').insert([{
+        
+        const insertPayload = {
             leadid: generatedLeadId,
             agentid: agentId,
             phone: to,
             from_number: from,
-            callid: returnedCallId,
+            callid: returnedCallId ? String(returnedCallId) : null,
             status: isApiFailed ? `Failed: ${errorMessage}` : 'Initiated',
-            initiated_at: new Date().toISOString() // Ensures correct timestamp format
-        }]);
+            initiated_at: new Date().toISOString()
+        };
+
+        const { data: insertedData, error: dbError } = await supabase
+            .from('click_calls')
+            .insert([insertPayload])
+            .select();
 
         if (dbError) {
-            console.error("Supabase CTI Insert Error:", dbError);
+            console.error("Supabase CTI Insert Error Details:", dbError);
+        } else {
+            console.log("Successfully inserted CTI row:", insertedData);
         }
 
         if (isApiFailed) {
