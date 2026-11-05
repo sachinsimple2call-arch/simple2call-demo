@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
         if (phone) {
             cdrQuery = cdrQuery.eq('phone', phone);
-            ctiQuery = cdrQuery.eq('phone', phone); // note: filter both correctly
+            ctiQuery = ctiQuery.eq('phone', phone);
         }
 
         const [cdrRes, ctiRes] = await Promise.all([cdrQuery, ctiQuery]);
