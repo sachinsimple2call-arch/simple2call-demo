@@ -41,7 +41,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
         th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
         th { background-color: #f1f5f9; }
-        .log-list { max-height: 250px; overflow-y: auto; font-size: 0.8rem; }
+        .log-list { max-height: 300px; overflow-y: auto; font-size: 0.8rem; }
         .log-item { padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-family: monospace; word-break: break-all; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
     </style>
@@ -115,7 +115,7 @@
 
         <div class="card">
             <div class="header-flex" style="margin-bottom: 12px;">
-                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Database Call History (CDR & CTI)</h2>
+                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Unified Call History (Sorted by Time)</h2>
                 <button onclick="fetchAllHistory(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
             </div>
             <div id="callLogs" class="log-list">
@@ -196,7 +196,7 @@
     }
 
     async function triggerClickToCall(name, phone) {
-        if (isCalling) return;
+        if (isCalling) return; // Prevent double-clicks
         isCalling = true;
 
         const btn = document.getElementById(`btn-call-${phone}`);
@@ -232,7 +232,7 @@
             if (result.success) {
                 alert(`Click-to-Call triggered successfully for ${name}!`);
             } else {
-                alert(`Call Failed: ${result.error || "Unknown error from provider"}`);
+                alert(`Call Failed: ${result.error || "Provider rejected request"}`);
             }
 
             setTimeout(() => fetchAllHistory(currentFilteredPhone), 2000);
@@ -257,7 +257,7 @@
             if (phone) {
                 titleElement.innerText = `History for ${customerName} (${phone})`;
             } else {
-                titleElement.innerText = "Live Database Call History (CDR & CTI)";
+                titleElement.innerText = "Live Unified Call History (Sorted by Time)";
             }
 
             let url = '/api/history';
@@ -277,43 +277,54 @@
             if (!data.success) return;
 
             const logsContainer = document.getElementById("callLogs");
-            let htmlContent = "";
+            let combinedLogs = [];
 
+            // 1. Process CDR Logs
             if (data.cdr && data.cdr.length > 0) {
-                htmlContent += data.cdr.map(l => {
-                    const custName = getCustomerName(l.phone);
-                    const statusColor = l.callresult === 'Connected' ? '#16a34a' : '#dc2626';
-                    return `
-                        <div class="log-item">
-                            <strong>[${l.callstart || 'N/A'}] [CDR]</strong> 
-                            Customer: <b>${custName} (${l.phone})</b> | 
-                            Agent: <b>${l.agentid}</b> | 
-                            Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
-                            (Talk: ${l.talktime || 0}s | ID: ${l.callid})
-                        </div>
-                    `;
-                }).join("");
+                data.cdr.forEach(l => {
+                    const timeVal = l.callstart || '';
+                    combinedLogs.push({
+                        timestamp: timeVal ? new Date(timeVal).getTime() : 0,
+                        html: `
+                            <div class="log-item">
+                                <strong>[${timeVal || 'N/A'}] [CDR]</strong> 
+                                Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
+                                Agent: <b>${l.agentid}</b> | 
+                                Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult || 'Completed'}</span> 
+                                (Talk: ${l.talktime || 0}s | ID: ${l.callid})
+                            </div>
+                        `
+                    });
+                });
             }
 
+            // 2. Process CTI Trigger Logs
             if (data.cti && data.cti.length > 0) {
-                htmlContent += data.cti.map(c => {
-                    const custName = getCustomerName(c.phone);
+                data.cti.forEach(c => {
+                    const timeVal = c.initiated_at || '';
+                    const timeStr = timeVal ? timeVal.replace('T', ' ').substring(0, 19) : '';
                     const isFailed = c.status && c.status.startsWith('Failed');
-                    const statusColor = isFailed ? '#dc2626' : '#2563eb';
                     const statusText = c.status || 'Initiated';
                     const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
 
-                    return `
-                        <div class="log-item" style="background: #f8fafc;">
-                            <strong>[${c.initiated_at ? c.initiated_at.replace('T', ' ').substring(0, 19) : 'N/A'}] [CTI Trigger]</strong> 
-                            Customer: <b>${custName} (${c.phone})</b> | 
-                            Agent: <b>${c.agentid}</b> | 
-                            Status: <span style="color: ${statusColor}">${statusText}</span>${matchedCallId}
-                        </div>
-                    `;
-                }).join("");
+                    combinedLogs.push({
+                        timestamp: timeVal ? new Date(timeVal).getTime() : 0,
+                        html: `
+                            <div class="log-item" style="background: #f8fafc;">
+                                <strong>[${timeStr}] [CTI Trigger]</strong> 
+                                Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
+                                Agent: <b>${c.agentid}</b> | 
+                                Status: <span style="color: ${isFailed ? '#dc2626' : '#2563eb'}">${statusText}</span>${matchedCallId}
+                            </div>
+                        `
+                    });
+                });
             }
 
+            // 3. Sort all logs together in descending order (Newest first)
+            combinedLogs.sort((a, b) => b.timestamp - a.timestamp);
+
+            let htmlContent = combinedLogs.map(item => item.html).join("");
             logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
 
         } catch (e) {
@@ -321,6 +332,7 @@
         }
     }
 
+    // Auto-refresh history every 10 seconds
     setInterval(() => {
         if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
         fetchAllHistory(currentFilteredPhone);
