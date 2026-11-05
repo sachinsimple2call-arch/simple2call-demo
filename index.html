@@ -116,12 +116,12 @@
             background-color: #f1f5f9;
         }
         .log-list {
-            max-height: 220px;
+            max-height: 250px;
             overflow-y: auto;
             font-size: 0.8rem;
         }
         .log-item {
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px dashed var(--border-color);
             font-family: monospace;
             word-break: break-all;
@@ -202,11 +202,11 @@
 
         <div class="card">
             <div class="header-flex" style="margin-bottom: 12px;">
-                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Database Call History (All Calls)</h2>
-                <button onclick="fetchCallLogs(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
+                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Database Call History (CDR & CTI)</h2>
+                <button onclick="fetchAllHistory(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
             </div>
             <div id="callLogs" class="log-list">
-                <div class="log-item">[System] Connecting to Supabase call logs...</div>
+                <div class="log-item">[System] Connecting to Supabase database...</div>
             </div>
         </div>
 
@@ -222,6 +222,8 @@
     ];
 
     let currentFilteredPhone = null;
+    const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
+    const supabaseKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
 
     function handleLogin() {
         const agentId = document.getElementById("loginAgentId").value.trim();
@@ -237,8 +239,7 @@
         document.getElementById("dashboardScreen").classList.remove("hidden");
         renderCustomers();
         
-        // Fetch call history on login
-        fetchCallLogs();
+        fetchAllHistory();
     }
 
     function handleLogout() {
@@ -256,7 +257,7 @@
                     <td>${c.phone}</td>
                     <td>
                         <button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
-                        <button class="btn-history" onclick="fetchCallLogs('${c.phone}', '${c.name}')">History</button>
+                        <button class="btn-history" onclick="fetchAllHistory('${c.phone}', '${c.name}')">History</button>
                     </td>
                 </tr>
             `;
@@ -278,17 +279,39 @@
         renderCustomers();
     }
 
+    function getCustomerName(phone) {
+        const found = customers.find(c => c.phone === phone);
+        return found ? found.name : "Unknown Customer";
+    }
+
     async function triggerClickToCall(name, phone) {
         const agentId = document.getElementById("activeAgentDisplay").innerText;
         const fromNumber = document.getElementById("configFromNumber").value.trim();
         const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
 
         try {
-            const response = await fetch('/api/proxy', {
+            // 1. Record Click-to-Call initiation in click_calls table
+            await fetch(`${supabaseUrl}/rest/v1/click_calls`, {
                 method: 'POST',
                 headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${supabaseKey}`,
                     'Content-Type': 'application/json'
                 },
+                body: JSON.stringify({
+                    leadid: leadid,
+                    agentid: agentId,
+                    phone: phone,
+                    from_number: fromNumber
+                })
+            });
+
+            fetchAllHistory(currentFilteredPhone);
+
+            // 2. Trigger proxy API call to Simple2Call
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     agentId: agentId,
                     from: fromNumber,
@@ -300,71 +323,92 @@
             const result = await response.json();
 
             if (result.success) {
-                const serverMsg = result.backendResponse ? ` | Res: ${result.backendResponse.trim()}` : '';
-                alert(`Click-to-Call triggered successfully for ${name}!` + serverMsg);
-                // Refresh log view after a short delay
-                setTimeout(() => fetchCallLogs(currentFilteredPhone), 3000);
+                alert(`Click-to-Call triggered successfully for ${name}!`);
+                setTimeout(() => fetchAllHistory(currentFilteredPhone), 3000);
             } else {
                 throw new Error(result.error || "API error");
             }
 
         } catch (error) {
-            console.error("API Error:", error);
+            console.error("Click-to-Call Error:", error);
             alert(`Failed to trigger call: ${error.message}`);
         }
     }
 
-    async function fetchCallLogs(phone = null, customerName = '') {
+    async function fetchAllHistory(phone = null, customerName = '') {
         try {
-            const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
-            const supabaseKey = "sb_publishable_pFhn-14emEu_TmpVycyiKA_LHFig8st"; 
-
             currentFilteredPhone = phone;
             
             const titleElement = document.getElementById("logSectionTitle");
             if (phone) {
                 titleElement.innerText = `History for ${customerName} (${phone})`;
             } else {
-                titleElement.innerText = "Live Database Call History (All Calls)";
+                titleElement.innerText = "Live Database Call History (CDR & CTI)";
             }
 
-            let endpoint = `${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`;
+            // Fetch CDR call logs and Click-to-Call initiations simultaneously
+            let cdrUrl = `${supabaseUrl}/rest/v1/call_logs?select=*&order=callstart.desc&limit=15`;
+            let ctiUrl = `${supabaseUrl}/rest/v1/click_calls?select=*&order=initiated_at.desc&limit=15`;
+
             if (phone) {
-                endpoint += `&phone=eq.${phone}`;
+                cdrUrl += `&phone=eq.${phone}`;
+                ctiUrl += `&phone=eq.${phone}`;
             }
 
-            const response = await fetch(endpoint, {
-                headers: {
-                    'apikey': supabaseKey,
-                    'Authorization': `Bearer ${supabaseKey}`
-                }
-            });
+            const [cdrRes, ctiRes] = await Promise.all([
+                fetch(cdrUrl, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }),
+                fetch(ctiUrl, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } })
+            ]);
 
-            const logsData = await response.json();
-            
+            const cdrData = await cdrRes.json();
+            const ctiData = await ctiRes.json();
+
             const logsContainer = document.getElementById("callLogs");
-            if (Array.isArray(logsData) && logsData.length > 0) {
-                logsContainer.innerHTML = logsData.map(l => `
-                    <div class="log-item">
-                        <strong>[${l.callstart || 'N/A'}]</strong> 
-                        Agent: <b>${l.agentid}</b> | 
-                        Phone: <b>${l.phone}</b> | 
-                        Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult}</span> 
-                        (Talk: ${l.talktime}s)
-                    </div>
-                `).join("");
-            } else {
-                logsContainer.innerHTML = `<div class="log-item">[System] No call history found.</div>`;
+            let htmlContent = "";
+
+            // Render Completed/Inbound/Outbound CDR Logs
+            if (Array.isArray(cdrData) && cdrData.length > 0) {
+                htmlContent += cdrData.map(l => {
+                    const custName = getCustomerName(l.phone);
+                    const statusColor = l.callresult === 'Connected' ? '#16a34a' : '#dc2626';
+                    return `
+                        <div class="log-item">
+                            <strong>[${l.callstart || 'N/A'}] [CDR]</strong> 
+                            Customer: <b>${custName} (${l.phone})</b> | 
+                            Agent: <b>${l.agentid}</b> | 
+                            Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
+                            (Talk: ${l.talktime || 0}s | ID: ${l.callid})
+                        </div>
+                    `;
+                }).join("");
             }
+
+            // Render Click-to-Call Initiations
+            if (Array.isArray(ctiData) && ctiData.length > 0) {
+                htmlContent += ctiData.map(c => {
+                    const custName = getCustomerName(c.phone);
+                    return `
+                        <div class="log-item" style="background: #f8fafc;">
+                            <strong>[${c.initiated_at ? c.initiated_at.replace('T', ' ').substring(0, 19) : 'N/A'}] [CTI Trigger]</strong> 
+                            Customer: <b>${custName} (${c.phone})</b> | 
+                            Agent: <b>${c.agentid}</b> | 
+                            Status: <span style="color: #2563eb">Initiated via CRM</span>
+                        </div>
+                    `;
+                }).join("");
+            }
+
+            logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
+
         } catch (e) {
-            console.error("Error fetching call logs:", e);
+            console.error("Error fetching call history:", e);
         }
     }
 
-    // Automatically refresh call logs every 10 seconds
+    // Auto-refresh every 10 seconds
     setInterval(() => {
         if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
-        fetchCallLogs(currentFilteredPhone);
+        fetchAllHistory(currentFilteredPhone);
     }, 10000);
 </script>
 
