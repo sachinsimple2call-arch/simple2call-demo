@@ -174,29 +174,7 @@
             `;
         });
     }
-// Standardize and convert UTC time from database to local IST time display
-    function formatTimeDisplay(timeVal) {
-        if (!timeVal) return 'N/A';
-        
-        // Ensure standard ISO format for parsing
-        const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
-        const date = new Date(isoTime);
-        
-        if (isNaN(date.getTime())) {
-            return timeVal.replace('T', ' ').substring(0, 19);
-        }
 
-        // Convert to local YYYY-MM-DD HH:MM:SS format
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-    
     function addCustomer() {
         const name = document.getElementById("custName").value.trim();
         const phone = document.getElementById("custPhone").value.trim();
@@ -217,10 +195,28 @@
         return found ? found.name : "Unknown Customer";
     }
 
-    // Standardize time formatting for UI display
+    // Convert database UTC time to local user timezone (IST)
     function formatTimeDisplay(timeVal) {
         if (!timeVal) return 'N/A';
-        return timeVal.replace('T', ' ').substring(0, 19);
+        
+        let cleanTime = timeVal.trim().replace(' ', 'T');
+        if (!cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) {
+            cleanTime += 'Z';
+        }
+
+        const date = new Date(cleanTime);
+        if (isNaN(date.getTime())) {
+            return timeVal.replace('T', ' ').substring(0, 19);
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
     async function triggerClickToCall(name, phone) {
@@ -311,11 +307,13 @@
             if (data.cdr && data.cdr.length > 0) {
                 data.cdr.forEach(l => {
                     const timeVal = l.callstart || '';
-                    const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
+                    let cleanTime = timeVal.trim().replace(' ', 'T');
+                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
+                    
                     const cleanTimeStr = formatTimeDisplay(timeVal);
                     
                     combinedLogs.push({
-                        timestamp: isoTime ? new Date(isoTime).getTime() : 0,
+                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
                         html: `
                             <div class="log-item">
                                 <strong>[${cleanTimeStr}] [CDR]</strong> 
@@ -333,27 +331,27 @@
             if (data.cti && data.cti.length > 0) {
                 data.cti.forEach(c => {
                     const timeVal = c.initiated_at || '';
-                    const isoTime = timeVal.includes(' ') && !timeVal.includes('T') ? timeVal.replace(' ', 'T') : timeVal;
+                    let cleanTime = timeVal.trim().replace(' ', 'T');
+                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
+                    
                     const cleanTimeStr = formatTimeDisplay(timeVal);
-                    const isFailed = c.status && c.status.startsWith('Failed');
-                    const statusText = c.status || 'Initiated';
                     const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
 
                     combinedLogs.push({
-                        timestamp: isoTime ? new Date(isoTime).getTime() : 0,
+                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
                         html: `
                             <div class="log-item" style="background: #f8fafc;">
                                 <strong>[${cleanTimeStr}] [CTI Trigger]</strong> 
                                 Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
                                 Agent: <b>${c.agentid}</b> | 
-                                Status: <span style="color: ${isFailed ? '#dc2626' : '#2563eb'}">${statusText}</span>${matchedCallId}
+                                Status: <span style="color: #2563eb">Initiated</span>${matchedCallId}
                             </div>
                         `
                     });
                 });
             }
 
-            // 3. Sort all logs together in descending order (Newest first) with safe fallback
+            // 3. Sort all logs together in descending order (Newest first)
             combinedLogs.sort((a, b) => (isNaN(b.timestamp) ? 0 : b.timestamp) - (isNaN(a.timestamp) ? 0 : a.timestamp));
 
             let htmlContent = combinedLogs.map(item => item.html).join("");
