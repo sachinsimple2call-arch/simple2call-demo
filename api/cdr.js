@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
@@ -13,7 +14,6 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Hardcoded temporarily to bypass Vercel env variable sync issues
     const supabaseUrl = "https://trzhfqurcdhiyagdxwgy.supabase.co";
     const supabaseKey = "sb_secret_mvYcKWR5zn1eJaZziYN2eQ_dZ41JU9K";
 
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
 
         return res.status(200).json({ 
             success: true, 
+            version: "v2-nocache",
             message: `Successfully processed ${records.length} call log(s)` 
         });
 
