@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple2Call CRM & CTI Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #0f172a;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 4px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 8px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        th, td {
+            text-align: left;
+            padding: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #f1f5f9;
+        }
+        .btn-call {
+            background-color: #16a34a;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+        .btn-call:hover {
+            background-color: #15803d;
+        }
+        .log-list {
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .log-item {
+            padding: 4px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Add Customer Section -->
+    <div class="card">
+        <h2>Add New Customer</h2>
+        <div class="form-group">
+            <input type="text" id="custName" placeholder="Customer Name">
+        </div>
+        <div class="form-group">
+            <input type="text" id="custPhone" placeholder="Phone Number (e.g., 9876543210)">
+        </div>
+        <button onclick="addCustomer()">Save & Add Customer</button>
+    </div>
+
+    <!-- Customer Directory & Click-to-Call -->
+    <div class="card">
+        <h2>Customer Directory (Click-to-Call)</h2>
+        <table id="customerTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Populated dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Call Logs Section -->
+    <div class="card">
+        <h2>Real-Time Call Logs</h2>
+        <div id="callLogs" class="log-list">
+            <div class="log-item">System ready. No calls logged yet.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initial dummy data
+    let customers = [
+        { name: "Rahul Sharma", phone: "9820098200" },
+        { name: "Priya Patil", phone: "9811198111" }
+    ];
+
+    let logs = [];
+
+    function renderCustomers() {
+        const tbody = document.querySelector("#customerTable tbody");
+        tbody.innerHTML = "";
+        customers.forEach((c, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${c.name}</td>
+                    <td>${c.phone}</td>
+                    <td><button class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function addCustomer() {
+        const name = document.getElementById("custName").value.trim();
+        const phone = document.getElementById("custPhone").value.trim();
+
+        if(!name || !phone) {
+            alert("Please enter both name and phone number.");
+            return;
+        }
+
+        customers.push({ name, phone });
+        document.getElementById("custName").value = "";
+        document.getElementById("custPhone").value = "";
+        renderCustomers();
+    }
+
+    function triggerClickToCall(name, phone) {
+        // --- SIMULATING API INTEGRATION ---
+        // When you get your actual Click-to-Call API, replace this fetch URL with your endpoint:
+        // fetch('https://your-simple2call-api-endpoint/click2call?phone=' + phone)
+        
+        console.log(`Initiating Click-to-Call for ${name} at ${phone}`);
+        
+        // Log the call event
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = `[${timestamp}] Outbound call initiated to <b>${name}</b> (${phone}) via Click-to-Call API.`;
+        logs.unshift(logEntry);
+
+        renderLogs();
+        alert(`Click-to-Call triggered successfully for ${name} (${phone})!`);
+    }
+
+    function renderLogs() {
+        const logsContainer = document.getElementById("callLogs");
+        logsContainer.innerHTML = logs.map(l => `<div class="log-item">${l}</div>`).join("");
+    }
+
+    // Initial load
+    renderCustomers();
+</script>
+
+</body>
+</html>
