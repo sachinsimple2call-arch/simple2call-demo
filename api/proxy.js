@@ -16,13 +16,10 @@ export default async function handler(req, res) {
     const tenant = "id1_ccsdemo";
     const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
 
-    // Option A: If Simple2Call expects query parameters (Current setup)
-    const targetUrl = new URL(`https://ccs1.simple2call.com/cim/page`);
-    targetUrl.searchParams.append('tenant', tenant);
-    targetUrl.searchParams.append('loginkey', loginkey);
-    targetUrl.searchParams.append('script', 'cim_api');
-    targetUrl.searchParams.append('function', 'v1');
+    // Build base URL with query parameters for authentication/routing
+    const targetUrl = `https://ccs1.simple2call.com/cim/page?tenant=${tenant}&loginkey=${loginkey}&script=cim_api&function=v1`;
 
+    // Send parameters as a JSON payload body (matching your original curl --data-raw structure)
     const payload = {
         endpoint: "click2dial",
         method: "call",
@@ -35,13 +32,12 @@ export default async function handler(req, res) {
     };
 
     try {
-        // NOTE: If your API specifically requires a POST with a JSON body instead of a GET with query params, 
-        // change method to 'POST' and pass payload in the 'body' property.
-        const apiResponse = await fetch(targetUrl.toString(), {
-            method: 'GET', 
+        const apiResponse = await fetch(targetUrl, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify(payload)
         });
 
         const responseText = await apiResponse.text();
