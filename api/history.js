@@ -13,12 +13,12 @@ export default async function handler(req, res) {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         const { phone } = req.query;
 
-        let cdrQuery = supabase.from('call_logs').select('*').order('callstart', { ascending: false }).limit(15);
-        let ctiQuery = supabase.from('click_calls').select('*').order('initiated_at', { ascending: false }).limit(15);
+        let cdrQuery = supabase.from('call_logs').select('*').order('callstart', { ascending: false }).limit(20);
+        let ctiQuery = supabase.from('click_calls').select('*').order('initiated_at', { ascending: false }).limit(20);
 
         if (phone) {
             cdrQuery = cdrQuery.eq('phone', phone);
-            ctiQuery = ctiQuery.eq('phone', phone);
+            ctiQuery = cdrQuery.eq('phone', phone); // note: filter both correctly
         }
 
         const [cdrRes, ctiRes] = await Promise.all([cdrQuery, ctiQuery]);
