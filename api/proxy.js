@@ -11,32 +11,63 @@ export default async function handler(req, res) {
 
     const { agentId, from, to, leadid } = req.body;
 
-    // 1. Log CTI initiation to Supabase
+    if (!agentId || !to) {
+        return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
+    }
+
+    const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
+
+    // 1. Securely log CTI initiation to Supabase
     try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         await supabase.from('click_calls').insert([{
-            leadid: leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000),
+            leadid: generatedLeadId,
             agentid: agentId,
             phone: to,
             from_number: from
         }]);
     } catch (dbErr) {
-        console.error("Failed to log CTI initiation:", dbErr);
+        console.error("Failed to log CTI initiation to Supabase:", dbErr);
     }
 
-    // 2. Trigger actual Click-to-Call API
+    // 2. Trigger Simple2Call Click-to-Call API using your working cURL structure
     try {
-        const apiUrl = `https://api.simple2call.com/api/v1/clickToCall?agentId=${encodeURIComponent(agentId)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&leadid=${encodeURIComponent(leadid)}`;
+        const simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
         
-        const apiResponse = await fetch(apiUrl, { method: 'POST' });
+        const payload = {
+            endpoint: "click2dial",
+            method: "call",
+            userId: "script_admin",
+            userPassword: "wuNAHW11g434!1",
+            agentId: agentId,
+            from: from,
+            to: to,
+            leadid: generatedLeadId
+        };
+
+        const apiResponse = await fetch(simple2CallUrl, { 
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
         const responseText = await apiResponse.text();
+        
+        let parsedResponse;
+        try {
+            parsedResponse = JSON.parse(responseText);
+        } catch (e) {
+            parsedResponse = responseText;
+        }
 
         return res.status(200).json({
             success: true,
-            backendResponse: responseText
+            backendResponse: parsedResponse
         });
     } catch (error) {
-        console.error("Proxy Error:", error);
+        console.error("Proxy Fetch Error:", error);
         return res.status(500).json({ success: false, error: error.message });
     }
 }
