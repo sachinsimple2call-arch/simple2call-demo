@@ -256,7 +256,27 @@
         document.getElementById("custPhone").value = "";
         renderCustomers();
     }
-
+    async function loadCallLogs() {
+    try {
+        // You can query Supabase directly using its public REST API or through your own Vercel API route
+        const response = await fetch(`https://your-supabase-project.supabase.co/rest/v1/call_logs?select=*&order=callstart.desc&limit=10`, {
+            headers: {
+                'apikey': 'YOUR_SUPABASE_ANON_KEY',
+                'Authorization': 'Bearer YOUR_SUPABASE_ANON_KEY'
+            }
+        });
+        const logsData = await response.json();
+        
+        const logsContainer = document.getElementById("callLogs");
+        logsContainer.innerHTML = logsData.map(l => `
+            <div class="log-item">
+                <strong>[${l.callstart}]</strong> Call ID: ${l.callid} | Phone: ${l.phone} | Status: <b>${l.callresult}</b> (Talk Time: ${l.talktime}s)
+            </div>
+        `).join("");
+    } catch (e) {
+        console.error("Error loading logs", e);
+    }
+    }
     async function triggerClickToCall(name, phone) {
         const agentId = document.getElementById("activeAgentDisplay").innerText;
         const fromNumber = document.getElementById("configFromNumber").value.trim();
