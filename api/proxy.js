@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-    // Enable CORS for your Vercel frontend domain
+    // Enable CORS for your frontend
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,27 +16,29 @@ export default async function handler(req, res) {
 
     const tenant = "id1_ccsdemo";
     const loginkey = "dijks9ksn9203ksfqmbxx1fncid";
-    const targetUrl = `https://ccs1.simple2call.com/cim/page?tenant=${tenant}&loginkey=${loginkey}&script=cim_api&function=v1`;
 
-    const payload = {
-        endpoint: "click2dial",
-        method: "call",
-        userId: "script_admin",
-        userPassword: "wuNAHW11g434!1",
-        agentId: agentId,
-        from: from,
-        to: to,
-        leadid: leadid
-    };
+    // Build the target URL and append all parameters as query strings (since GET requests cannot have a body)
+    const targetUrl = new URL(`https://ccs1.simple2call.com/cim/page`);
+    targetUrl.searchParams.append('tenant', tenant);
+    targetUrl.searchParams.append('loginkey', loginkey);
+    targetUrl.searchParams.append('script', 'cim_api');
+    targetUrl.searchParams.append('function', 'v1');
+    targetUrl.searchParams.append('endpoint', 'click2dial');
+    targetUrl.searchParams.append('method', 'call');
+    targetUrl.searchParams.append('userId', 'script_admin');
+    targetUrl.searchParams.append('userPassword', 'wuNAHW11g434!1');
+    targetUrl.searchParams.append('agentId', agentId);
+    targetUrl.searchParams.append('from', from);
+    targetUrl.searchParams.append('to', to);
+    targetUrl.searchParams.append('leadid', leadid);
 
     try {
-        // Server-to-server request bypasses browser CORS completely
-        const apiResponse = await fetch(targetUrl, {
+        // Execute GET request without a body
+        const apiResponse = await fetch(targetUrl.toString(), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
+            }
         });
 
         const data = await apiResponse.text();
