@@ -1,6 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SECRET_KEY } from './db-config.js';
 
+// Helper to parse provider local time (+05:30 IST) into standard UTC ISO string
+function parseToUTC(timeStr) {
+    if (!timeStr) return new Date().toISOString();
+    let cleaned = timeStr.trim().replace(' ', 'T');
+    
+    // If the provider string doesn't have a timezone, append IST (+05:30)
+    if (!cleaned.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleaned)) {
+        cleaned += '+05:30';
+    }
+    
+    const d = new Date(cleaned);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -25,8 +39,8 @@ export default async function handler(req, res) {
             talktime: call.talkTime || call.talktime || 0,
             calldirection: call.callDirection || call.calldirection || 'Outbound',
             callresult: call.callResult || call.callresult || 'Completed',
-            callstart: call.callStart || call.callstart || new Date().toISOString(),
-            callend: call.callEnd || call.callend || new Date().toISOString(),
+            callstart: parseToUTC(call.callStart || call.callstart),
+            callend: parseToUTC(call.callEnd || call.callend),
             dnis: call.dnis || '',
             acd: call.acd || '',
             project_id: call.project_id || '',
@@ -42,7 +56,6 @@ export default async function handler(req, res) {
 
         // 2. Link callid or auto-create missing CTI records
         for (const call of records) {
-            // Try updating existing row first
             const { data: updatedRows } = await supabase
                 .from('click_calls')
                 .update({ callid: call.callid })
@@ -50,7 +63,6 @@ export default async function handler(req, res) {
                 .is('callid', null)
                 .select();
 
-            // If no click_calls row was found to update, create a fallback CTI entry so it's never missing!
             if (!updatedRows || updatedRows.length === 0) {
                 await supabase.from('click_calls').insert([{
                     leadid: 'Auto_' + call.callid,
@@ -58,8 +70,7 @@ export default async function handler(req, res) {
                     phone: call.phone,
                     from_number: call.dnis || '',
                     callid: call.callid,
-                    status: `Completed (${call.callresult || 'CDR Ingested'})`,
-                    initiated_at: call.callstart // Match the exact call start time!
+                    initiated_at: call.callstart // Aligns perfectly with call start time
                 }]);
             }
         }
