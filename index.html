@@ -217,11 +217,11 @@
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
-    // Determine status color: Connected = Green, Not Connected = Orange, Dropped = Red
+    // Determine status color: Completed = Green, Not Connected = Orange, Dropped = Red
     function getStatusColor(result) {
         if (!result) return '#475569';
         const lower = result.toLowerCase();
-        if (lower.includes('connect') && !lower.includes('not')) return '#16a34a'; // Green
+        if (lower.includes('Completed') && !lower.includes('not')) return '#16a34a'; // Green
         if (lower.includes('drop') || lower.includes('fail') || lower.includes('busy')) return '#dc2626'; // Red
         return '#d97706'; // Orange (Not connected / default)
     }
