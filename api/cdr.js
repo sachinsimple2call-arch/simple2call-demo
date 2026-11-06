@@ -1,16 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_SECRET_KEY } from './db-config.js';
 
-// Helper to parse provider local time (+05:30 IST) into standard UTC ISO string
 function parseToUTC(timeStr) {
     if (!timeStr) return new Date().toISOString();
     let cleaned = timeStr.trim().replace(' ', 'T');
-    
-    // If the provider string doesn't have a timezone, append IST (+05:30)
     if (!cleaned.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleaned)) {
         cleaned += '+05:30';
     }
-    
     const d = new Date(cleaned);
     return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
@@ -54,25 +50,13 @@ export default async function handler(req, res) {
 
         if (error) throw error;
 
-        // 2. Link callid or auto-create missing CTI records
+        // 2. Link callid to the most recent matching click_calls entry without creating duplicates
         for (const call of records) {
-            const { data: updatedRows } = await supabase
+            await supabase
                 .from('click_calls')
                 .update({ callid: call.callid })
                 .eq('phone', call.phone)
-                .is('callid', null)
-                .select();
-
-            if (!updatedRows || updatedRows.length === 0) {
-                await supabase.from('click_calls').insert([{
-                    leadid: 'Auto_' + call.callid,
-                    agentid: call.agentid || 'unknown_agent',
-                    phone: call.phone,
-                    from_number: call.dnis || '',
-                    callid: call.callid,
-                    initiated_at: call.callstart // Aligns perfectly with call start time
-                }]);
-            }
+                .is('callid', null);
         }
 
         return res.status(200).json({ 
