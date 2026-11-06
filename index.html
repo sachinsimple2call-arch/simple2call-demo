@@ -13,6 +13,7 @@
             --text-color: #1e293b;
             --border-color: #e2e8f0;
             --success: #16a34a;
+            --warning: #d97706;
             --danger: #dc2626;
             --secondary: #475569;
         }
@@ -41,7 +42,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
         th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
         th { background-color: #f1f5f9; }
-        .log-list { max-height: 300px; overflow-y: auto; font-size: 0.8rem; }
+        .log-list { max-height: 320px; overflow-y: auto; font-size: 0.8rem; }
         .log-item { padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-family: monospace; word-break: break-all; }
         .header-flex { display: flex; justify-content: space-between; align-items: center; }
     </style>
@@ -195,15 +196,12 @@
         return found ? found.name : "Unknown Customer";
     }
 
-    // Convert database UTC time to local user timezone (IST)
     function formatTimeDisplay(timeVal) {
         if (!timeVal) return 'N/A';
-        
         let cleanTime = timeVal.trim().replace(' ', 'T');
         if (!cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) {
             cleanTime += 'Z';
         }
-
         const date = new Date(cleanTime);
         if (isNaN(date.getTime())) {
             return timeVal.replace('T', ' ').substring(0, 19);
@@ -217,6 +215,15 @@
         const seconds = String(date.getSeconds()).padStart(2, '0');
 
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    // Determine status color: Connected = Green, Not Connected = Orange, Dropped = Red
+    function getStatusColor(result) {
+        if (!result) return '#475569';
+        const lower = result.toLowerCase();
+        if (lower.includes('connect') && !lower.includes('not')) return '#16a34a'; // Green
+        if (lower.includes('drop') || lower.includes('fail') || lower.includes('busy')) return '#dc2626'; // Red
+        return '#d97706'; // Orange (Not connected / default)
     }
 
     async function triggerClickToCall(name, phone) {
@@ -303,7 +310,7 @@
             const logsContainer = document.getElementById("callLogs");
             let combinedLogs = [];
 
-            // 1. Process CDR Logs
+            // 1. Process CDR Logs (with Direction & Disconnected By)
             if (data.cdr && data.cdr.length > 0) {
                 data.cdr.forEach(l => {
                     const timeVal = l.callstart || '';
@@ -311,7 +318,10 @@
                     if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
                     
                     const cleanTimeStr = formatTimeDisplay(timeVal);
-                    
+                    const statusColor = getStatusColor(l.callresult);
+                    const direction = l.calldirection ? ` | Dir: ${l.calldirection}` : '';
+                    const discBy = l.discby ? ` | DiscBy: ${l.discby}` : '';
+
                     combinedLogs.push({
                         timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
                         html: `
@@ -319,8 +329,8 @@
                                 <strong>[${cleanTimeStr}] [CDR]</strong> 
                                 Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
                                 Agent: <b>${l.agentid}</b> | 
-                                Status: <span style="color: ${l.callresult === 'Connected' ? '#16a34a' : '#dc2626'}">${l.callresult || 'Completed'}</span> 
-                                (Talk: ${l.talktime || 0}s | ID: ${l.callid})
+                                Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
+                                (Talk: ${l.talktime || 0}s | ID: ${l.callid}${direction}${discBy})
                             </div>
                         `
                     });
