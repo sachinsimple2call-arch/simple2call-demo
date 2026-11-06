@@ -221,7 +221,7 @@
     function getStatusColor(result) {
         if (!result) return '#d97706';
         const lower = result.toLowerCase();
-        if (lower.includes('completed') || lower.includes('connected')) return '#16a34a'; // Green
+        if (lower.includes('completed') return '#16a34a'; // Green
         if (lower.includes('drop') || lower.includes('fail') || lower.includes('busy')) return '#dc2626'; // Red
         return '#d97706'; // Orange (Not connected / default)
     }
