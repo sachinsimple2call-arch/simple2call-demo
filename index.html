@@ -217,13 +217,22 @@
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
-    // Color Mapping: Completed/Connected = Green, Not connected = Orange, Dropped/Failed = Red
+    // Color Mapping: Completed = Green, Not connected = Yellow/Orange, Dropped/Failed = Red
     function getStatusColor(result) {
         if (!result) return '#d97706';
         const lower = result.toLowerCase();
-        if (lower.includes('completed') return '#16a34a'; // Green
-        if (lower.includes('drop') || lower.includes('fail') || lower.includes('busy')) return '#dc2626'; // Red
-        return '#d97706'; // Orange (Not connected / default)
+        
+        if (lower.includes('not connect') || lower.includes('busy') || lower.includes('missed') || lower.includes('no answer')) {
+            return '#d97706'; // Yellow / Orange
+        }
+        if (lower.includes('drop') || lower.includes('fail') || lower.includes('abort')) {
+            return '#dc2626'; // Red
+        }
+        if (lower.includes('complete') || lower.includes('connect') || lower.includes('answer')) {
+            return '#16a34a'; // Green
+        }
+        
+        return '#d97706'; // Default fallback (Yellow/Orange)
     }
 
     async function triggerClickToCall(name, phone) {
