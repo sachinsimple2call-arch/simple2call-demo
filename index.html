@@ -217,11 +217,11 @@
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
-    // Determine status color: Completed = Green, Not Connected = Orange, Dropped = Red
+    // Color Mapping: Completed/Connected = Green, Not connected = Orange, Dropped/Failed = Red
     function getStatusColor(result) {
-        if (!result) return '#475569';
+        if (!result) return '#d97706';
         const lower = result.toLowerCase();
-        if (lower.includes('Completed') && !lower.includes('not')) return '#16a34a'; // Green
+        if (lower.includes('completed') || lower.includes('connected')) return '#16a34a'; // Green
         if (lower.includes('drop') || lower.includes('fail') || lower.includes('busy')) return '#dc2626'; // Red
         return '#d97706'; // Orange (Not connected / default)
     }
@@ -310,7 +310,7 @@
             const logsContainer = document.getElementById("callLogs");
             let combinedLogs = [];
 
-            // 1. Process CDR Logs (with Direction & Disconnected By)
+            // 1. Process CDR Logs
             if (data.cdr && data.cdr.length > 0) {
                 data.cdr.forEach(l => {
                     const timeVal = l.callstart || '';
