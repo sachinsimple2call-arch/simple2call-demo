@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
-    const { agentId, from, to, leadid } = req.body;
+    const { environment, agentId, from, to, leadid } = req.body;
 
     if (!agentId || !to) {
         return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
@@ -18,13 +18,25 @@ export default async function handler(req, res) {
     const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
 
     try {
-        const simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
+        let simple2CallUrl, userId, userPassword;
+
+        // Route configuration based on environment selection
+        if (environment === 'production') {
+            simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
+            userId = 'custdemo_script_admin';
+            userPassword = '7HDmKS#O1zT5@i3gEeX';
+        } else {
+            // Default to Lab environment
+            simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
+            userId = 'script_admin';
+            userPassword = 'wuNAHW11g434!1';
+        }
         
         const payload = {
             endpoint: "click2dial",
             method: "call",
-            userId: "script_admin",
-            userPassword: "wuNAHW11g434!1",
+            userId: userId,
+            userPassword: userPassword,
             agentId: agentId,
             from: from,
             to: to,
@@ -48,11 +60,10 @@ export default async function handler(req, res) {
         const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
         const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
         
-        // Extract callId and parse as integer for bigint column
         const rawCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId;
         const returnedCallId = rawCallId ? parseInt(rawCallId, 10) : null;
 
-        // Insert into Supabase click_calls matching your exact table columns
+        // Insert audit log into Supabase
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         
         const insertPayload = {
@@ -72,7 +83,7 @@ export default async function handler(req, res) {
         if (dbError) {
             console.error("Supabase CTI Insert Error Details:", dbError);
         } else {
-            console.log("Successfully inserted CTI row:", insertedData);
+            console.log(`Successfully inserted CTI row [${environment}]:`, insertedData);
         }
 
         if (isApiFailed) {
