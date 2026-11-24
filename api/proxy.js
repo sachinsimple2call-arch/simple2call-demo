@@ -9,28 +9,44 @@ res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 if (req.method === 'OPTIONS') return res.status(200).end();
 if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
-const { agentId, from, to, leadid } = req.body;
+const { environment, agentId, from, to, leadid } = req.body;
 
 if (!agentId || !to) {
 return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
 }
 
+// Environment Configuration mapping for Production vs Lab
+const envConfigs = {
+production: {
+url: 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1',
+userId: 'script_admin',
+userPassword: 'wuNAHW11g434!1'
+},
+lab: {
+url: 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1',
+userId: 'custdemo_script_admin',
+userPassword: '7HDmKS#O1zT5@i3gEeX'
+}
+};
+
+const activeEnv = envConfigs[environment] ? environment : 'production';
+const selectedConfig = envConfigs[activeEnv];
+
 const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
 
 try {
-const simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
 const payload = {
 endpoint: "click2dial",
 method: "call",
-userId: "script_admin",
-userPassword: "wuNAHW11g434!1",
+userId: selectedConfig.userId,
+userPassword: selectedConfig.userPassword,
 agentId: agentId,
 from: from,
 to: to,
 leadid: generatedLeadId
 };
 
-const apiResponse = await fetch(simple2CallUrl, { 
+const apiResponse = await fetch(selectedConfig.url, { 
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify(payload)
@@ -46,11 +62,11 @@ parsedResponse = { raw: responseText };
 
 const isApiFailed = parsedResponse.status === 'ERROR' || parsedResponse.success === false || parsedResponse.error;
 const errorMessage = parsedResponse.error || parsedResponse.message || parsedResponse.raw || "Simple2Call rejected the request";
-// Extract callId and parse as integer for bigint column
+
 const rawCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId;
 const returnedCallId = rawCallId ? parseInt(rawCallId, 10) : null;
 
-// Insert into Supabase click_calls matching your exact table columns
+// Insert into Supabase table
 const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 const insertPayload = {
 leadid: generatedLeadId,
@@ -82,6 +98,7 @@ backendResponse: parsedResponse
 
 return res.status(200).json({
 success: true,
+environment: activeEnv,
 backendResponse: parsedResponse
 });
 
@@ -90,4 +107,3 @@ console.error("Proxy Fetch Error:", error);
 return res.status(500).json({ success: false, error: error.message });
 }
 }
-
