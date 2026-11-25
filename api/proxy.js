@@ -20,13 +20,13 @@ export default async function handler(req, res) {
     try {
         let simple2CallUrl, userId, userPassword;
 
-        // Route configuration based on environment selection
+        // Distinct mapping for Production vs Lab tenants and endpoints
         if (environment === 'production') {
             simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
             userId = 'custdemo_script_admin';
             userPassword = '7HDmKS#O1zT5@i3gEeX';
         } else {
-            // Default to Lab environment
+            // Lab environment configuration
             simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
             userId = 'script_admin';
             userPassword = 'wuNAHW11g434!1';
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
         const rawCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId;
         const returnedCallId = rawCallId ? parseInt(rawCallId, 10) : null;
 
-        // Insert audit log into Supabase
+        // Log transaction into Supabase
         const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
         
         const insertPayload = {
