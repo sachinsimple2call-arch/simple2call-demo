@@ -16,10 +16,10 @@ export default async function handler(req, res) {
             return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
         }
 
-        const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
+        const generatedLeadId = leadid || 'Nuvamatest_' + Math.floor(Math.random() * 90000 + 10000);
         let simple2CallUrl, userId, userPassword;
 
-        // Directly mapped hardcoded credentials and endpoints for Production vs Lab
+        // Corrected exact mapping for Production vs Lab URLs, tenants, keys, and credentials
         if (environment === 'production') {
             simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
             userId = 'custdemo_script_admin';
