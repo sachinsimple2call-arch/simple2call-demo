@@ -19,23 +19,16 @@ export default async function handler(req, res) {
         const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
         let simple2CallUrl, userId, userPassword;
 
-        // Route explicitly based on selected environment
+        // Directly mapped hardcoded credentials and endpoints for Production vs Lab
         if (environment === 'production') {
             simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
-            userId = process.env.PROD_API_USER;
-            userPassword = process.env.PROD_API_PASS;
+            userId = 'custdemo_script_admin';
+            userPassword = '7HDmKS#O1zT5@i3gEeX';
         } else {
-            // Lab environment
+            // Lab environment configuration
             simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
-            userId = process.env.LAB_API_USER;
-            userPassword = process.env.LAB_API_PASS;
-        }
-
-        if (!userId || !userPassword) {
-            return res.status(500).json({ 
-                success: false, 
-                error: `Server configuration error: Missing environment variables for [${environment || 'lab'}]` 
-            });
+            userId = 'script_admin';
+            userPassword = 'wuNAHW11g434!1';
         }
         
         const payload = {
