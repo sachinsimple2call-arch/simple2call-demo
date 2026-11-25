@@ -61,17 +61,17 @@
         <div class="form-group">
             <label>Environment Selection</label>
             <select id="loginEnv" onchange="updateLoginDefaults()">
-                <option value="production">Production (pbxed / custdemo)</option>
-                <option value="lab">Lab (ccs1 / id1_ccsdemo)</option>
+                <option value="production">Production (ccs1 / id1_ccsdemo)</option>
+                <option value="lab">Lab (pbxed / custdemo)</option>
             </select>
         </div>
         <div class="form-group">
             <label>Agent ID</label>
-            <input type="text" id="loginAgentId" value="sachin_cim">
+            <input type="text" id="loginAgentId" value="sachin_lead">
         </div>
         <div class="form-group">
             <label>User Password</label>
-            <input type="password" id="loginPassword" value="7HDmKS#O1zT5@i3gEeX">
+            <input type="password" id="loginPassword" value="wuNAHW11g434!1">
         </div>
         <button onclick="handleLogin()">Login to CTI Panel</button>
     </div>
@@ -82,7 +82,7 @@
         <div class="card" style="padding: 10px 16px;">
             <div class="header-flex">
                 <span style="font-size: 0.85rem;">
-                    Logged in as: <strong id="activeAgentDisplay">sachin_cim</strong> 
+                    Logged in as: <strong id="activeAgentDisplay">sachin_lead</strong> 
                     | Env: <span id="activeEnvBadge" class="badge-env badge-prod">Production</span>
                 </span>
                 <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -101,13 +101,13 @@
                 </div>
                 <div class="form-group">
                     <label>Default From Number (CLI) - Editable</label>
-                    <input type="text" id="configFromNumber" value="15014926441">
+                    <input type="text" id="configFromNumber" value="919403895136">
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px;">
                 <div class="form-group">
                     <label>Active Tenant ID (Locked per Environment)</label>
-                    <input type="text" id="configTenant" value="custdemo" disabled style="background: #f1f5f9; font-weight: bold;">
+                    <input type="text" id="configTenant" value="id1_ccsdemo" disabled style="background: #f1f5f9; font-weight: bold;">
                 </div>
             </div>
         </div>
@@ -118,7 +118,7 @@
                 <input type="text" id="custName" placeholder="Customer Name (e.g., Sachin Waghmare)">
             </div>
             <div class="form-group">
-                <input type="text" id="custPhone" placeholder="Phone Number (e.g., 917506489361)">
+                <input type="text" id="custPhone" placeholder="Phone Number (e.g., 918452080008)">
             </div>
             <button onclick="addCustomer()">Save & Add to Directory</button>
         </div>
@@ -153,303 +153,9 @@
 
 <script>
     let customers = [
-        { name: "Sachin Waghmare", phone: "917506489361" },
+        { name: "Sachin Waghmare", phone: "918452080008" },
         { name: "Neeraj Parikh", phone: "919322212193" },
         { name: "Bala Murugan", phone: "918508361792" }
     ];
 
-    let currentFilteredPhone = null;
-    let isCalling = false;
-
-    // Exact credentials mapping for Production vs Lab
-    const envPresets = {
-        production: {
-            agentId: "sachin_cim",
-            pass: "7HDmKS#O1zT5@i3gEeX",
-            from: "15014926441",
-            tenant: "custdemo"
-        },
-        lab: {
-            agentId: "sachin_lead",
-            pass: "wuNAHW11g434!1",
-            from: "919403895136",
-            tenant: "id1_ccsdemo"
-        }
-    };
-
-    function updateLoginDefaults() {
-        const env = document.getElementById("loginEnv").value;
-        const preset = envPresets[env];
-        document.getElementById("loginAgentId").value = preset.agentId;
-        document.getElementById("loginPassword").value = preset.pass;
-    }
-
-    function syncEnvironmentSettings() {
-        const env = document.getElementById("configEnvironment").value;
-        const preset = envPresets[env];
-        document.getElementById("configFromNumber").value = preset.from;
-        document.getElementById("configTenant").value = preset.tenant;
-        
-        const badge = document.getElementById("activeEnvBadge");
-        if (env === 'production') {
-            badge.className = "badge-env badge-prod";
-            badge.innerText = "Production";
-        } else {
-            badge.className = "badge-env badge-lab";
-            badge.innerText = "Lab";
-        }
-    }
-
-    function handleLogin() {
-        const agentId = document.getElementById("loginAgentId").value.trim();
-        const pass = document.getElementById("loginPassword").value.trim();
-        const env = document.getElementById("loginEnv").value;
-
-        if(!agentId || !pass) {
-            alert("Please enter both Agent ID and Password.");
-            return;
-        }
-
-        document.getElementById("activeAgentDisplay").innerText = agentId;
-        document.getElementById("configEnvironment").value = env;
-        syncEnvironmentSettings();
-
-        document.getElementById("loginScreen").classList.add("hidden");
-        document.getElementById("dashboardScreen").classList.remove("hidden");
-        renderCustomers();
-        fetchAllHistory();
-    }
-
-    function handleLogout() {
-        document.getElementById("dashboardScreen").classList.add("hidden");
-        document.getElementById("loginScreen").classList.remove("hidden");
-    }
-
-    function renderCustomers() {
-        const tbody = document.querySelector("#customerTable tbody");
-        tbody.innerHTML = "";
-        customers.forEach((c) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${c.name}</b></td>
-                    <td>${c.phone}</td>
-                    <td>
-                        <button id="btn-call-${c.phone}" class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
-                        <button class="btn-history" onclick="fetchAllHistory('${c.phone}', '${c.name}')">History</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    function addCustomer() {
-        const name = document.getElementById("custName").value.trim();
-        const phone = document.getElementById("custPhone").value.trim();
-
-        if(!name || !phone) {
-            alert("Please enter both name and phone number.");
-            return;
-        }
-
-        customers.push({ name, phone });
-        document.getElementById("custName").value = "";
-        document.getElementById("custPhone").value = "";
-        renderCustomers();
-    }
-
-    function getCustomerName(phone) {
-        const found = customers.find(c => c.phone === phone);
-        return found ? found.name : "Unknown Customer";
-    }
-
-    function formatTimeDisplay(timeVal) {
-        if (!timeVal) return 'N/A';
-        let cleanTime = timeVal.trim().replace(' ', 'T');
-        if (!cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) {
-            cleanTime += 'Z';
-        }
-        const date = new Date(cleanTime);
-        if (isNaN(date.getTime())) {
-            return timeVal.replace('T', ' ').substring(0, 19);
-        }
-
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-
-    function getStatusColor(result) {
-        if (!result) return '#d97706';
-        const lower = result.toLowerCase();
-        
-        if (lower.includes('not connect') || lower.includes('busy') || lower.includes('missed') || lower.includes('no answer')) {
-            return '#d97706'; 
-        }
-        if (lower.includes('drop') || lower.includes('fail') || lower.includes('abort')) {
-            return '#dc2626'; 
-        }
-        if (lower.includes('complete') || lower.includes('connect') || lower.includes('answer')) {
-            return '#16a34a'; 
-        }
-        
-        return '#d97706'; 
-    }
-
-    async function triggerClickToCall(name, phone) {
-        if (isCalling) return;
-        isCalling = true;
-
-        const btn = document.getElementById(`btn-call-${phone}`);
-        if (btn) {
-            btn.innerText = "Calling...";
-            btn.disabled = true;
-        }
-
-        const agentId = document.getElementById("activeAgentDisplay").innerText;
-        const environment = document.getElementById("configEnvironment").value;
-        const fromNumber = document.getElementById("configFromNumber").value.trim();
-        const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
-
-        try {
-            const response = await fetch('/api/proxy', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    environment: environment,
-                    agentId: agentId,
-                    from: fromNumber,
-                    to: phone,
-                    leadid: leadid
-                })
-            });
-
-            const text = await response.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                throw new Error("Server response was not valid JSON: " + text);
-            }
-
-            if (result.success) {
-                alert(`Click-to-Call triggered successfully for ${name} (${environment.toUpperCase()})!`);
-            } else {
-                alert(`Call Failed: ${result.error || "Provider rejected request"}`);
-            }
-
-            setTimeout(() => fetchAllHistory(currentFilteredPhone), 2000);
-
-        } catch (error) {
-            console.error("Click-to-Call Error:", error);
-            alert(`Failed to trigger call: ${error.message}`);
-        } finally {
-            isCalling = false;
-            if (btn) {
-                btn.innerText = "Call";
-                btn.disabled = false;
-            }
-        }
-    }
-
-    async function fetchAllHistory(phone = null, customerName = '') {
-        try {
-            currentFilteredPhone = phone;
-            
-            const titleElement = document.getElementById("logSectionTitle");
-            if (phone) {
-                titleElement.innerText = `History for ${customerName} (${phone})`;
-            } else {
-                titleElement.innerText = "Live Unified Call History (Sorted by Time)";
-            }
-
-            let url = '/api/history';
-            if (phone) url += `?phone=${phone}`;
-
-            const res = await fetch(url);
-            const text = await res.text();
-            
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (jsonErr) {
-                console.error("Server returned non-JSON response:", text);
-                return;
-            }
-
-            if (!data.success) return;
-
-            const logsContainer = document.getElementById("callLogs");
-            let combinedLogs = [];
-
-            if (data.cdr && data.cdr.length > 0) {
-                data.cdr.forEach(l => {
-                    const timeVal = l.callstart || '';
-                    let cleanTime = timeVal.trim().replace(' ', 'T');
-                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
-                    
-                    const cleanTimeStr = formatTimeDisplay(timeVal);
-                    const statusColor = getStatusColor(l.callresult);
-                    const direction = l.calldirection ? ` | Dir: ${l.calldirection}` : '';
-                    const discBy = l.discby ? ` | DiscBy: ${l.discby}` : '';
-
-                    combinedLogs.push({
-                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
-                        html: `
-                            <div class="log-item">
-                                <strong>[${cleanTimeStr}] [CDR]</strong> 
-                                Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
-                                Agent: <b>${l.agentid}</b> | 
-                                Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
-                                (Talk: ${l.talktime || 0}s | ID: ${l.callid}${direction}${discBy})
-                            </div>
-                        `
-                    });
-                });
-            }
-
-            if (data.cti && data.cti.length > 0) {
-                data.cti.forEach(c => {
-                    const timeVal = c.initiated_at || '';
-                    let cleanTime = timeVal.trim().replace(' ', 'T');
-                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
-                    
-                    const cleanTimeStr = formatTimeDisplay(timeVal);
-                    const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
-
-                    combinedLogs.push({
-                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
-                        html: `
-                            <div class="log-item" style="background: #f8fafc;">
-                                <strong>[${cleanTimeStr}] [CTI Trigger]</strong> 
-                                Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
-                                Agent: <b>${c.agentid}</b> | 
-                                Status: <span style="color: #2563eb">Initiated</span>${matchedCallId}
-                            </div>
-                        `
-                    });
-                });
-            }
-
-            combinedLogs.sort((a, b) => (isNaN(b.timestamp) ? 0 : b.timestamp) - (isNaN(a.timestamp) ? 0 : a.timestamp));
-
-            let htmlContent = combinedLogs.map(item => item.html).join("");
-            logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
-
-        } catch (e) {
-            console.error("Error fetching call history:", e);
-        }
-    }
-
-    setInterval(() => {
-        if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
-        fetchAllHistory(currentFilteredPhone);
-    }, 10000);
-</script>
-
-</body>
-</html>
+    let currentFilteredPhone = null
