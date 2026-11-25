@@ -59,10 +59,10 @@
     <div id="loginScreen" class="card">
         <h2>Simple2Call Agent Login</h2>
         <div class="form-group">
-            <label>Environment</label>
+            <label>Environment Selection</label>
             <select id="loginEnv" onchange="updateLoginDefaults()">
-                <option value="production">Production (pbxed / sachin_cim)</option>
-                <option value="lab">Lab (ccs1 / sachin_lead)</option>
+                <option value="production">Production (pbxed / custdemo)</option>
+                <option value="lab">Lab (ccs1 / id1_ccsdemo)</option>
             </select>
         </div>
         <div class="form-group">
@@ -100,14 +100,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Default From Number (CLI)</label>
+                    <label>Default From Number (CLI) - Editable</label>
                     <input type="text" id="configFromNumber" value="15014926441">
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px;">
                 <div class="form-group">
-                    <label>Active Tenant ID (Auto-mapped)</label>
-                    <input type="text" id="configTenant" value="custdemo" disabled style="background: #f1f5f9;">
+                    <label>Active Tenant ID (Locked per Environment)</label>
+                    <input type="text" id="configTenant" value="custdemo" disabled style="background: #f1f5f9; font-weight: bold;">
                 </div>
             </div>
         </div>
@@ -161,7 +161,7 @@
     let currentFilteredPhone = null;
     let isCalling = false;
 
-    // Preset defaults for quick switching
+    // Exact credentials mapping for Production vs Lab
     const envPresets = {
         production: {
             agentId: "sachin_cim",
@@ -190,7 +190,6 @@
         document.getElementById("configFromNumber").value = preset.from;
         document.getElementById("configTenant").value = preset.tenant;
         
-        // Update top badge
         const badge = document.getElementById("activeEnvBadge");
         if (env === 'production') {
             badge.className = "badge-env badge-prod";
