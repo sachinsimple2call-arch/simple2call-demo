@@ -1,442 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple2Call CRM & CTI Integration</title>
-<style>
-:root {
---primary: #2563eb;
---primary-hover: #1d4ed8;
---bg-color: #f8fafc;
---card-bg: #ffffff;
---text-color: #1e293b;
---border-color: #e2e8f0;
---success: #16a34a;
---warning: #d97706;
---danger: #dc2626;
---secondary: #475569;
-}
-body {
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-background-color: var(--bg-color);
-color: var(--text-color);
-margin: 0;
-padding: 16px;
-}
-.container { max-width: 100%; margin: 0 auto; }
-.hidden { display: none !important; }
-h2 { font-size: 1.1rem; margin-bottom: 12px; color: #0f172a; border-bottom: 2px solid var(--primary); padding-bottom: 4px; }
-.card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.form-group { margin-bottom: 12px; }
-label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #475569; }
-input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem; background-color: #fff; }
-select { cursor: pointer; }
-button { background-color: var(--primary); color: white; border: none; padding: 9px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; width: 100%; }
-button:hover { background-color: var(--primary-hover); }
-.btn-call { background-color: var(--success); padding: 5px 10px; font-size: 0.8rem; width: auto; }
-.btn-call:hover { background-color: #15803d; }
-.btn-call:disabled { background-color: #94a3b8; cursor: not-allowed; }
-.btn-history { background-color: var(--secondary); padding: 5px 10px; font-size: 0.8rem; width: auto; margin-left: 4px; }
-.btn-history:hover { background-color: #334155; }
-.logout-btn { background-color: var(--danger); width: auto; padding: 4px 10px; font-size: 0.75rem; }
-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
-th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
-th { background-color: #f1f5f9; }
-.log-list { max-height: 320px; overflow-y: auto; font-size: 0.8rem; }
-.log-item { padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-family: monospace; word-break: break-all; }
-.header-flex { display: flex; justify-content: space-between; align-items: center; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple2Call CRM & CTI Integration</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --secondary: #475569;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+        }
+        .container { max-width: 100%; margin: 0 auto; }
+        .hidden { display: none !important; }
+        h2 { font-size: 1.1rem; margin-bottom: 12px; color: #0f172a; border-bottom: 2px solid var(--primary); padding-bottom: 4px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #475569; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem; background-color: #fff; }
+        select { cursor: pointer; }
+        button { background-color: var(--primary); color: white; border: none; padding: 9px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.9rem; width: 100%; }
+        button:hover { background-color: var(--primary-hover); }
+        .btn-call { background-color: var(--success); padding: 5px 10px; font-size: 0.8rem; width: auto; }
+        .btn-call:hover { background-color: #15803d; }
+        .btn-call:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        .btn-history { background-color: var(--secondary); padding: 5px 10px; font-size: 0.8rem; width: auto; margin-left: 4px; }
+        .btn-history:hover { background-color: #334155; }
+        .logout-btn { background-color: var(--danger); width: auto; padding: 4px 10px; font-size: 0.75rem; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 8px; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #f1f5f9; }
+        .log-list { max-height: 320px; overflow-y: auto; font-size: 0.8rem; }
+        .log-item { padding: 8px 0; border-bottom: 1px dashed var(--border-color); font-family: monospace; word-break: break-all; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        .badge-env { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-lab { background-color: #fef3c7; color: #d97706; }
+        .badge-prod { background-color: #dcfce7; color: #16a34a; }
+    </style>
 </head>
 <body>
 
 <div class="container">
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen" class="card">
-<h2>Simple2Call Agent Login</h2>
-<div class="form-group">
-<label>Environment</label>
-<select id="loginEnvironment" onchange="updateLoginPresets()">
-<option value="production">Production (ccs1)</option>
-<option value="lab">Lab (pbxed)</option>
-</select>
-</div>
-<div class="form-group">
-<label>Agent ID</label>
-<input type="text" id="loginAgentId" value="sachin_lead">
-</div>
-<div class="form-group">
-<label>User Password</label>
-<input type="password" id="loginPassword" value="wuNAHW11g434!1">
-</div>
-<button onclick="handleLogin()">Login to CTI Panel</button>
-</div>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="card">
+        <h2>Simple2Call Agent Login</h2>
+        <div class="form-group">
+            <label>Environment</label>
+            <select id="loginEnv" onchange="updateLoginDefaults()">
+                <option value="production">Production (pbxed / sachin_cim)</option>
+                <option value="lab">Lab (ccs1 / sachin_lead)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Agent ID</label>
+            <input type="text" id="loginAgentId" value="sachin_cim">
+        </div>
+        <div class="form-group">
+            <label>User Password</label>
+            <input type="password" id="loginPassword" value="7HDmKS#O1zT5@i3gEeX">
+        </div>
+        <button onclick="handleLogin()">Login to CTI Panel</button>
+    </div>
 
-<!-- CRM & CTI DASHBOARD -->
-<div id="dashboardScreen" class="hidden">
-<div class="card" style="padding: 10px 16px;">
-<div class="header-flex">
-<span style="font-size: 0.85rem;">Logged in as: <strong id="activeAgentDisplay">sachin_lead</strong> | Env: <strong id="activeEnvDisplay" style="text-transform: uppercase;">Production</strong></span>
-<button class="logout-btn" onclick="handleLogout()">Logout</button>
-</div>
-</div>
+    <!-- CRM & CTI DASHBOARD -->
+    <div id="dashboardScreen" class="hidden">
+        
+        <div class="card" style="padding: 10px 16px;">
+            <div class="header-flex">
+                <span style="font-size: 0.85rem;">
+                    Logged in as: <strong id="activeAgentDisplay">sachin_cim</strong> 
+                    | Env: <span id="activeEnvBadge" class="badge-env badge-prod">Production</span>
+                </span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
 
-<div class="card">
-<h2>CTI Dynamic Configuration</h2>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-<div class="form-group">
-<label>Environment Mode</label>
-<select id="configEnvironment" onchange="onEnvironmentChange()">
-<option value="production">Production (ccs1)</option>
-<option value="lab">Lab (pbxed)</option>
-</select>
-</div>
-<div class="form-group">
-<label>CLI (From Number) - Editable</label>
-<input type="text" id="configFromNumber" value="919403895136">
-</div>
-</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-<div class="form-group">
-<label>Tenant ID (Fixed)</label>
-<input type="text" id="configTenant" value="id1_ccsdemo" disabled style="background: #f1f5f9;">
-</div>
-<div class="form-group">
-<label>API User ID (Fixed)</label>
-<input type="text" id="configUserId" value="script_admin" disabled style="background: #f1f5f9;">
-</div>
-</div>
-</div>
+        <div class="card">
+            <h2>CTI Dynamic Configuration</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label>Active Environment</label>
+                    <select id="configEnvironment" onchange="syncEnvironmentSettings()">
+                        <option value="production">Production</option>
+                        <option value="lab">Lab</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Default From Number (CLI)</label>
+                    <input type="text" id="configFromNumber" value="15014926441">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 8px;">
+                <div class="form-group">
+                    <label>Active Tenant ID (Auto-mapped)</label>
+                    <input type="text" id="configTenant" value="custdemo" disabled style="background: #f1f5f9;">
+                </div>
+            </div>
+        </div>
 
-<div class="card">
-<h2>Add New Customer</h2>
-<div class="form-group">
-<input type="text" id="custName" placeholder="Customer Name (e.g., Sachin Waghmare)">
-</div>
-<div class="form-group">
-<input type="text" id="custPhone" placeholder="Phone Number (e.g., 918452080008)">
-</div>
-<button onclick="addCustomer()">Save & Add to Directory</button>
-</div>
+        <div class="card">
+            <h2>Add New Customer</h2>
+            <div class="form-group">
+                <input type="text" id="custName" placeholder="Customer Name (e.g., Sachin Waghmare)">
+            </div>
+            <div class="form-group">
+                <input type="text" id="custPhone" placeholder="Phone Number (e.g., 917506489361)">
+            </div>
+            <button onclick="addCustomer()">Save & Add to Directory</button>
+        </div>
 
-<div class="card">
-<h2>Customer Directory & Click-to-Call</h2>
-<table id="customerTable">
-<thead>
-<tr>
-<th>Name</th>
-<th>Phone</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
+        <div class="card">
+            <h2>Customer Directory & Click-to-Call</h2>
+            <table id="customerTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-<div class="card">
-<div class="header-flex" style="margin-bottom: 12px;">
-<h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Unified Call History (Sorted by Time)</h2>
-<button onclick="fetchAllHistory(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
-</div>
-<div id="callLogs" class="log-list">
-<div class="log-item">[System] Connecting to secure backend...</div>
-</div>
-</div>
+        <div class="card">
+            <div class="header-flex" style="margin-bottom: 12px;">
+                <h2 id="logSectionTitle" style="margin: 0; border: none; font-size: 1.1rem;">Live Unified Call History (Sorted by Time)</h2>
+                <button onclick="fetchAllHistory(null)" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: #64748b;">Show All Logs</button>
+            </div>
+            <div id="callLogs" class="log-list">
+                <div class="log-item">[System] Connecting to secure backend...</div>
+            </div>
+        </div>
 
-</div>
+    </div>
 
 </div>
 
 <script>
-let customers = [
-{ name: "Sachin Waghmare", phone: "918452080008" },
-{ name: "Neeraj Parikh", phone: "919322212193" },
-{ name: "Bala Murugan", phone: "918508361792" }
-];
+    let customers = [
+        { name: "Sachin Waghmare", phone: "917506489361" },
+        { name: "Neeraj Parikh", phone: "919322212193" },
+        { name: "Bala Murugan", phone: "918508361792" }
+    ];
 
-let currentFilteredPhone = null;
-let isCalling = false;
+    let currentFilteredPhone = null;
+    let isCalling = false;
 
-const presets = {
-production: {
-agentId: "sachin_lead",
-password: "wuNAHW11g434!1",
-tenant: "id1_ccsdemo",
-userId: "script_admin",
-fromNumber: "919403895136"
-},
-lab: {
-agentId: "sachin_cim",
-password: "7HDmKS#O1zT5@i3gEeX",
-tenant: "custdemo",
-userId: "custdemo_script_admin",
-fromNumber: "15014926441"
-}
-};
+    // Preset defaults for quick switching
+    const envPresets = {
+        production: {
+            agentId: "sachin_cim",
+            pass: "7HDmKS#O1zT5@i3gEeX",
+            from: "15014926441",
+            tenant: "custdemo"
+        },
+        lab: {
+            agentId: "sachin_lead",
+            pass: "wuNAHW11g434!1",
+            from: "919403895136",
+            tenant: "id1_ccsdemo"
+        }
+    };
 
-function updateLoginPresets() {
-const env = document.getElementById("loginEnvironment").value;
-const p = presets[env];
-document.getElementById("loginAgentId").value = p.agentId;
-document.getElementById("loginPassword").value = p.password;
-}
+    function updateLoginDefaults() {
+        const env = document.getElementById("loginEnv").value;
+        const preset = envPresets[env];
+        document.getElementById("loginAgentId").value = preset.agentId;
+        document.getElementById("loginPassword").value = preset.pass;
+    }
 
-function onEnvironmentChange() {
-const env = document.getElementById("configEnvironment").value;
-const p = presets[env];
-document.getElementById("configTenant").value = p.tenant;
-document.getElementById("configUserId").value = p.userId;
-document.getElementById("configFromNumber").value = p.fromNumber;
-document.getElementById("activeEnvDisplay").innerText = env;
-}
+    function syncEnvironmentSettings() {
+        const env = document.getElementById("configEnvironment").value;
+        const preset = envPresets[env];
+        document.getElementById("configFromNumber").value = preset.from;
+        document.getElementById("configTenant").value = preset.tenant;
+        
+        // Update top badge
+        const badge = document.getElementById("activeEnvBadge");
+        if (env === 'production') {
+            badge.className = "badge-env badge-prod";
+            badge.innerText = "Production";
+        } else {
+            badge.className = "badge-env badge-lab";
+            badge.innerText = "Lab";
+        }
+    }
 
-function handleLogin() {
-const env = document.getElementById("loginEnvironment").value;
-const agentId = document.getElementById("loginAgentId").value.trim();
-const pass = document.getElementById("loginPassword").value.trim();
+    function handleLogin() {
+        const agentId = document.getElementById("loginAgentId").value.trim();
+        const pass = document.getElementById("loginPassword").value.trim();
+        const env = document.getElementById("loginEnv").value;
 
-if(!agentId || !pass) {
-alert("Please enter both Agent ID and Password.");
-return;
-}
+        if(!agentId || !pass) {
+            alert("Please enter both Agent ID and Password.");
+            return;
+        }
 
-// Sync configuration dropdowns with chosen login environment
-document.getElementById("configEnvironment").value = env;
-onEnvironmentChange();
+        document.getElementById("activeAgentDisplay").innerText = agentId;
+        document.getElementById("configEnvironment").value = env;
+        syncEnvironmentSettings();
 
-// Override agentId in dashboard if customized during login
-document.getElementById("activeAgentDisplay").innerText = agentId;
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("dashboardScreen").classList.remove("hidden");
+        renderCustomers();
+        fetchAllHistory();
+    }
 
-document.getElementById("loginScreen").classList.add("hidden");
-document.getElementById("dashboardScreen").classList.remove("hidden");
-renderCustomers();
-fetchAllHistory();
-}
+    function handleLogout() {
+        document.getElementById("dashboardScreen").classList.add("hidden");
+        document.getElementById("loginScreen").classList.remove("hidden");
+    }
 
-function handleLogout() {
-document.getElementById("dashboardScreen").classList.add("hidden");
-document.getElementById("loginScreen").classList.remove("hidden");
-}
+    function renderCustomers() {
+        const tbody = document.querySelector("#customerTable tbody");
+        tbody.innerHTML = "";
+        customers.forEach((c) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${c.name}</b></td>
+                    <td>${c.phone}</td>
+                    <td>
+                        <button id="btn-call-${c.phone}" class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
+                        <button class="btn-history" onclick="fetchAllHistory('${c.phone}', '${c.name}')">History</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
 
-function renderCustomers() {
-const tbody = document.querySelector("#customerTable tbody");
-tbody.innerHTML = "";
-customers.forEach((c) => {
-tbody.innerHTML += `
-<tr>
-<td><b>${c.name}</b></td>
-<td>${c.phone}</td>
-<td>
-<button id="btn-call-${c.phone}" class="btn-call" onclick="triggerClickToCall('${c.name}', '${c.phone}')">Call</button>
-<button class="btn-history" onclick="fetchAllHistory('${c.phone}', '${c.name}')">History</button>
-</td>
-</tr>
-`;
-});
-}
+    function addCustomer() {
+        const name = document.getElementById("custName").value.trim();
+        const phone = document.getElementById("custPhone").value.trim();
 
-function addCustomer() {
-const name = document.getElementById("custName").value.trim();
-const phone = document.getElementById("custPhone").value.trim();
+        if(!name || !phone) {
+            alert("Please enter both name and phone number.");
+            return;
+        }
 
-if(!name || !phone) {
-alert("Please enter both name and phone number.");
-return;
-}
+        customers.push({ name, phone });
+        document.getElementById("custName").value = "";
+        document.getElementById("custPhone").value = "";
+        renderCustomers();
+    }
 
-customers.push({ name, phone });
-document.getElementById("custName").value = "";
-document.getElementById("custPhone").value = "";
-renderCustomers();
-}
+    function getCustomerName(phone) {
+        const found = customers.find(c => c.phone === phone);
+        return found ? found.name : "Unknown Customer";
+    }
 
-function getCustomerName(phone) {
-const found = customers.find(c => c.phone === phone);
-return found ? found.name : "Unknown Customer";
-}
+    function formatTimeDisplay(timeVal) {
+        if (!timeVal) return 'N/A';
+        let cleanTime = timeVal.trim().replace(' ', 'T');
+        if (!cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) {
+            cleanTime += 'Z';
+        }
+        const date = new Date(cleanTime);
+        if (isNaN(date.getTime())) {
+            return timeVal.replace('T', ' ').substring(0, 19);
+        }
 
-function formatTimeDisplay(timeVal) {
-if (!timeVal) return 'N/A';
-let cleanTime = timeVal.trim().replace(' ', 'T');
-if (!cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) {
-cleanTime += 'Z';
-}
-const date = new Date(cleanTime);
-if (isNaN(date.getTime())) {
-return timeVal.replace('T', ' ').substring(0, 19);
-}
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
 
-const year = date.getFullYear();
-const month = String(date.getMonth() + 1).padStart(2, '0');
-const day = String(date.getDate()).padStart(2, '0');
-const hours = String(date.getHours()).padStart(2, '0');
-const minutes = String(date.getMinutes()).padStart(2, '0');
-const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
 
-return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
+    function getStatusColor(result) {
+        if (!result) return '#d97706';
+        const lower = result.toLowerCase();
+        
+        if (lower.includes('not connect') || lower.includes('busy') || lower.includes('missed') || lower.includes('no answer')) {
+            return '#d97706'; 
+        }
+        if (lower.includes('drop') || lower.includes('fail') || lower.includes('abort')) {
+            return '#dc2626'; 
+        }
+        if (lower.includes('complete') || lower.includes('connect') || lower.includes('answer')) {
+            return '#16a34a'; 
+        }
+        
+        return '#d97706'; 
+    }
 
-function getStatusColor(result) {
-if (!result) return '#d97706';
-const lower = result.toLowerCase();
-if (lower.includes('not connect') || lower.includes('busy') || lower.includes('missed') || lower.includes('no answer')) {
-return '#d97706';
-}
-if (lower.includes('drop') || lower.includes('fail') || lower.includes('abort')) {
-return '#dc2626';
-}
-if (lower.includes('complete') || lower.includes('connect') || lower.includes('answer')) {
-return '#16a34a';
-}
-return '#d97706';
-}
+    async function triggerClickToCall(name, phone) {
+        if (isCalling) return;
+        isCalling = true;
 
-async function triggerClickToCall(name, phone) {
-if (isCalling) return;
-isCalling = true;
+        const btn = document.getElementById(`btn-call-${phone}`);
+        if (btn) {
+            btn.innerText = "Calling...";
+            btn.disabled = true;
+        }
 
-const btn = document.getElementById(`btn-call-${phone}`);
-if (btn) {
-btn.innerText = "Calling...";
-btn.disabled = true;
-}
+        const agentId = document.getElementById("activeAgentDisplay").innerText;
+        const environment = document.getElementById("configEnvironment").value;
+        const fromNumber = document.getElementById("configFromNumber").value.trim();
+        const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
 
-const environment = document.getElementById("configEnvironment").value;
-const agentId = document.getElementById("activeAgentDisplay").innerText;
-const fromNumber = document.getElementById("configFromNumber").value.trim();
-const leadid = "Lead_" + Math.floor(Math.random() * 90000 + 10000);
+        try {
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    environment: environment,
+                    agentId: agentId,
+                    from: fromNumber,
+                    to: phone,
+                    leadid: leadid
+                })
+            });
 
-try {
-const response = await fetch('/api/proxy', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
-environment: environment,
-agentId: agentId,
-from: fromNumber,
-to: phone,
-leadid: leadid
-})
-});
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                throw new Error("Server response was not valid JSON: " + text);
+            }
 
-const text = await response.text();
-let result;
-try {
-result = JSON.parse(text);
-} catch (e) {
-throw new Error("Server response was not valid JSON: " + text);
-}
+            if (result.success) {
+                alert(`Click-to-Call triggered successfully for ${name} (${environment.toUpperCase()})!`);
+            } else {
+                alert(`Call Failed: ${result.error || "Provider rejected request"}`);
+            }
 
-if (result.success) {
-alert(`Click-to-Call triggered successfully for ${name} (${environment.toUpperCase()})!`);
-} else {
-alert(`Call Failed: ${result.error || "Provider rejected request"}`);
-}
+            setTimeout(() => fetchAllHistory(currentFilteredPhone), 2000);
 
-setTimeout(() => fetchAllHistory(currentFilteredPhone), 2000);
+        } catch (error) {
+            console.error("Click-to-Call Error:", error);
+            alert(`Failed to trigger call: ${error.message}`);
+        } finally {
+            isCalling = false;
+            if (btn) {
+                btn.innerText = "Call";
+                btn.disabled = false;
+            }
+        }
+    }
 
-} catch (error) {
-console.error("Click-to-Call Error:", error);
-alert(`Failed to trigger call: ${error.message}`);
-} finally {
-isCalling = false;
-if (btn) {
-btn.innerText = "Call";
-btn.disabled = false;
-}
-}
-}
+    async function fetchAllHistory(phone = null, customerName = '') {
+        try {
+            currentFilteredPhone = phone;
+            
+            const titleElement = document.getElementById("logSectionTitle");
+            if (phone) {
+                titleElement.innerText = `History for ${customerName} (${phone})`;
+            } else {
+                titleElement.innerText = "Live Unified Call History (Sorted by Time)";
+            }
 
-async function fetchAllHistory(phone = null, customerName = '') {
-try {
-currentFilteredPhone = phone;
-const titleElement = document.getElementById("logSectionTitle");
-if (phone) {
-titleElement.innerText = `History for ${customerName} (${phone})`;
-} else {
-titleElement.innerText = "Live Unified Call History (Sorted by Time)";
-}
+            let url = '/api/history';
+            if (phone) url += `?phone=${phone}`;
 
-let url = '/api/history';
-if (phone) url += `?phone=${phone}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (jsonErr) {
+                console.error("Server returned non-JSON response:", text);
+                return;
+            }
 
-const res = await fetch(url);
-const text = await res.text();
-let data;
-try {
-data = JSON.parse(text);
-} catch (jsonErr) {
-console.error("Server returned non-JSON response:", text);
-return;
-}
+            if (!data.success) return;
 
-if (!data.success) return;
+            const logsContainer = document.getElementById("callLogs");
+            let combinedLogs = [];
 
-const logsContainer = document.getElementById("callLogs");
-let combinedLogs = [];
+            if (data.cdr && data.cdr.length > 0) {
+                data.cdr.forEach(l => {
+                    const timeVal = l.callstart || '';
+                    let cleanTime = timeVal.trim().replace(' ', 'T');
+                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
+                    
+                    const cleanTimeStr = formatTimeDisplay(timeVal);
+                    const statusColor = getStatusColor(l.callresult);
+                    const direction = l.calldirection ? ` | Dir: ${l.calldirection}` : '';
+                    const discBy = l.discby ? ` | DiscBy: ${l.discby}` : '';
 
-if (data.cdr && data.cdr.length > 0) {
-data.cdr.forEach(l => {
-const timeVal = l.callstart || '';
-let cleanTime = timeVal.trim().replace(' ', 'T');
-if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
-const cleanTimeStr = formatTimeDisplay(timeVal);
-const statusColor = getStatusColor(l.callresult);
-const direction = l.calldirection ? ` | Dir: ${l.calldirection}` : '';
-const discBy = l.discby ? ` | DiscBy: ${l.discby}` : '';
+                    combinedLogs.push({
+                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
+                        html: `
+                            <div class="log-item">
+                                <strong>[${cleanTimeStr}] [CDR]</strong> 
+                                Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
+                                Agent: <b>${l.agentid}</b> | 
+                                Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
+                                (Talk: ${l.talktime || 0}s | ID: ${l.callid}${direction}${discBy})
+                            </div>
+                        `
+                    });
+                });
+            }
 
-combinedLogs.push({
-timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
-html: `
-<div class="log-item">
-<strong>[${cleanTimeStr}] [CDR]</strong> 
-Customer: <b>${getCustomerName(l.phone)} (${l.phone})</b> | 
-Agent: <b>${l.agentid}</b> | 
-Status: <span style="color: ${statusColor}">${l.callresult || 'Completed'}</span> 
-(Talk: ${l.talktime || 0}s | ID: ${l.callid}${direction}${discBy})
-</div>
-`
-});
-});
-}
+            if (data.cti && data.cti.length > 0) {
+                data.cti.forEach(c => {
+                    const timeVal = c.initiated_at || '';
+                    let cleanTime = timeVal.trim().replace(' ', 'T');
+                    if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
+                    
+                    const cleanTimeStr = formatTimeDisplay(timeVal);
+                    const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
 
-if (data.cti && data.cti.length > 0) {
-data.cti.forEach(c => {
-const timeVal = c.initiated_at || '';
-let cleanTime = timeVal.trim().replace(' ', 'T');
-if (cleanTime && !cleanTime.endsWith('Z') && !/[+\-]\d{2}:?\d{2}$/.test(cleanTime)) cleanTime += 'Z';
-const cleanTimeStr = formatTimeDisplay(timeVal);
-const matchedCallId = c.callid ? ` | Call ID: ${c.callid}` : '';
+                    combinedLogs.push({
+                        timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
+                        html: `
+                            <div class="log-item" style="background: #f8fafc;">
+                                <strong>[${cleanTimeStr}] [CTI Trigger]</strong> 
+                                Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
+                                Agent: <b>${c.agentid}</b> | 
+                                Status: <span style="color: #2563eb">Initiated</span>${matchedCallId}
+                            </div>
+                        `
+                    });
+                });
+            }
 
-combinedLogs.push({
-timestamp: cleanTime ? new Date(cleanTime).getTime() : 0,
-html: `
-<div class="log-item" style="background: #f8fafc;">
-<strong>[${cleanTimeStr}] [CTI Trigger]</strong> 
-Customer: <b>${getCustomerName(c.phone)} (${c.phone})</b> | 
-Agent: <b>${c.agentid}</b> | 
-Status: <span style="color: #2563eb">Initiated</span>${matchedCallId}
-</div>
-`
-});
-});
-}
+            combinedLogs.sort((a, b) => (isNaN(b.timestamp) ? 0 : b.timestamp) - (isNaN(a.timestamp) ? 0 : a.timestamp));
 
-combinedLogs.sort((a, b) => (isNaN(b.timestamp) ? 0 : b.timestamp) - (isNaN(a.timestamp) ? 0 : a.timestamp));
+            let htmlContent = combinedLogs.map(item => item.html).join("");
+            logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
 
-let htmlContent = combinedLogs.map(item => item.html).join("");
-logsContainer.innerHTML = htmlContent || `<div class="log-item">[System] No call history found in database.</div>`;
+        } catch (e) {
+            console.error("Error fetching call history:", e);
+        }
+    }
 
-} catch (e) {
-console.error("Error fetching call history:", e);
-}
-}
-
-setInterval(() => {
-if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
-fetchAllHistory(currentFilteredPhone);
-}, 10000);
+    setInterval(() => {
+        if (document.getElementById("dashboardScreen").classList.contains("hidden")) return;
+        fetchAllHistory(currentFilteredPhone);
+    }, 10000);
 </script>
 
 </body>
