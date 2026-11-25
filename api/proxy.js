@@ -20,13 +20,13 @@ export default async function handler(req, res) {
     try {
         let simple2CallUrl, userId, userPassword;
 
-        // Swapped Mapping: Production = id1_ccsdemo (ccs1), Lab = custdemo (pbxed)
-        if (environment === 'lab') {
+        // Distinct mapping for Production vs Lab tenants and endpoints
+        if (environment === 'production') {
             simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
             userId = 'custdemo_script_admin';
             userPassword = '7HDmKS#O1zT5@i3gEeX';
         } else {
-            // Production environment configuration (id1_ccsdemo)
+            // Lab environment configuration
             simple2CallUrl = 'https://ccs1.simple2call.com/cim/page?tenant=id1_ccsdemo&loginkey=dijks9ksn9203ksfqmbxx1fncid&script=cim_api&function=v1';
             userId = 'script_admin';
             userPassword = 'wuNAHW11g434!1';
