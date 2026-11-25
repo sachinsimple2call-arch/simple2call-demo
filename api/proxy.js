@@ -9,17 +9,18 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' });
 
+    const { environment, agentId, from, to, leadid } = req.body;
+
+    if (!agentId || !to) {
+        return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
+    }
+
+    const generatedLeadId = leadid || 'Lead_' + Math.floor(Math.random() * 90000 + 10000);
+
     try {
-        const { environment, agentId, from, to, leadid } = req.body || {};
-
-        if (!agentId || !to) {
-            return res.status(400).json({ success: false, error: 'Missing agentId or target phone number' });
-        }
-
-        const generatedLeadId = leadid || 'Nuvamatest_' + Math.floor(Math.random() * 90000 + 10000);
         let simple2CallUrl, userId, userPassword;
 
-        // Corrected exact mapping for Production vs Lab URLs, tenants, keys, and credentials
+        // Distinct mapping for Production vs Lab tenants and endpoints
         if (environment === 'production') {
             simple2CallUrl = 'https://pbxed.simple2call.com/cim/page?tenant=custdemo&loginkey=wkjn23zdIV293kss1hWIE2S2bsn3w&script=cim_api&function=v1';
             userId = 'custdemo_script_admin';
@@ -62,19 +63,27 @@ export default async function handler(req, res) {
         const rawCallId = parsedResponse.callId || parsedResponse.callid || parsedResponse.id || parsedResponse.data?.callId;
         const returnedCallId = rawCallId ? parseInt(rawCallId, 10) : null;
 
-        // Log transaction into Supabase safely
-        try {
-            const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
-            await supabase.from('click_calls').insert([{
-                leadid: generatedLeadId,
-                agentid: agentId,
-                phone: to,
-                from_number: from,
-                callid: !isNaN(returnedCallId) ? returnedCallId : null,
-                initiated_at: new Date().toISOString()
-            }]);
-        } catch (dbErr) {
-            console.error("Supabase Log Error (Non-blocking):", dbErr);
+        // Log transaction into Supabase
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
+        
+        const insertPayload = {
+            leadid: generatedLeadId,
+            agentid: agentId,
+            phone: to,
+            from_number: from,
+            callid: !isNaN(returnedCallId) ? returnedCallId : null,
+            initiated_at: new Date().toISOString()
+        };
+
+        const { data: insertedData, error: dbError } = await supabase
+            .from('click_calls')
+            .insert([insertPayload])
+            .select();
+
+        if (dbError) {
+            console.error("Supabase CTI Insert Error Details:", dbError);
+        } else {
+            console.log(`Successfully inserted CTI row [${environment}]:`, insertedData);
         }
 
         if (isApiFailed) {
@@ -91,7 +100,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Proxy Runtime Exception:", error);
-        return res.status(500).json({ success: false, error: error.message || "Internal Server Error" });
+        console.error("Proxy Fetch Error:", error);
+        return res.status(500).json({ success: false, error: error.message });
     }
 }
